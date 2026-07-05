@@ -5,9 +5,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
 import com.focisolutions.takehomeexercise.entity.Todo;
 import com.focisolutions.takehomeexercise.exception.TodoNotFoundException;
 import com.focisolutions.takehomeexercise.mapper.TodoMapper;
@@ -94,5 +96,38 @@ class TodoServiceImplTest {
         // then
         assertThat(result).containsExactly(response);
         then(todoRepository).should().findAll();
+    }
+
+    @Test
+    void givenExistingIdAndValidUpdateRequest_whenUpdateTodo_thenUpdatesFieldsAndReturnsMappedResponseTest() {
+        // given
+        final Long id = 1L;
+        final Todo todo = new Todo("Buy milk", null, null);
+        final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10));
+        final TodoResponse response = new TodoResponse(id, "Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10), false, Instant.now());
+        given(todoRepository.findById(id)).willReturn(Optional.of(todo));
+        given(todoRepository.save(todo)).willReturn(todo);
+        given(todoMapper.toResponse(todo)).willReturn(response);
+
+        // when
+        final TodoResponse result = todoServiceImpl.updateTodo(id, request);
+
+        // then
+        assertThat(result).isEqualTo(response);
+        assertThat(todo.getTitle()).isEqualTo("Buy oat milk");
+        then(todoRepository).should().save(todo);
+    }
+
+    @Test
+    void givenNonExistingId_whenUpdateTodo_thenThrowsTodoNotFoundExceptionTest() {
+        // given
+        final Long id = 404L;
+        final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", null, null);
+        given(todoRepository.findById(id)).willReturn(Optional.empty());
+
+        // when
+        // then
+        assertThatThrownBy(() -> todoServiceImpl.updateTodo(id, request)).isInstanceOf(TodoNotFoundException.class);
+        then(todoRepository).should(never()).save(any(Todo.class));
     }
 }

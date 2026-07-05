@@ -2,6 +2,7 @@ package com.focisolutions.takehomeexercise.service;
 
 import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
 import com.focisolutions.takehomeexercise.entity.Todo;
 import com.focisolutions.takehomeexercise.exception.TodoNotFoundException;
 import com.focisolutions.takehomeexercise.mapper.TodoMapper;
@@ -37,6 +38,15 @@ class TodoServiceImpl implements TodoService {
     @Override
     public List<TodoResponse> findAllTodos() {
         return todoRepository.findAll().stream().map(todoMapper::toResponse).toList();
+    }
+
+    @Override
+    public TodoResponse updateTodo(final Long id, final TodoUpdateRequest request) {
+        final Todo todo = getTodoOrThrow(id);
+        todo.updateDetails(request.title(), request.description(), request.dueDate());
+        final Todo saved = todoRepository.save(todo);
+        log.info("Updated todo {}", id);
+        return todoMapper.toResponse(saved);
     }
 
     private Todo getTodoOrThrow(final Long id) {

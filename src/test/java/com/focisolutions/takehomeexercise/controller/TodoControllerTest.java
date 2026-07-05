@@ -7,13 +7,14 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import tools.jackson.databind.ObjectMapper;
 import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
 import com.focisolutions.takehomeexercise.exception.TodoNotFoundException;
 import com.focisolutions.takehomeexercise.service.TodoService;
 import java.time.Instant;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(TodoController.class)
 class TodoControllerTest {
@@ -108,5 +110,50 @@ class TodoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1));
         then(todoService).should().findAllTodos();
+    }
+
+    @Test
+    void givenExistingIdAndValidBody_whenPutTodo_thenReturns200WithUpdatedFieldsTest() throws Exception {
+        // given
+        final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10));
+        final TodoResponse response = new TodoResponse(1L, "Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10), false, Instant.now());
+        given(todoService.updateTodo(eq(1L), any(TodoUpdateRequest.class))).willReturn(response);
+
+        // when
+        // then
+        mockMvc.perform(put("/todos/1")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Buy oat milk"));
+        then(todoService).should().updateTodo(eq(1L), any(TodoUpdateRequest.class));
+    }
+
+    @Test
+    void givenNonExistingId_whenPutTodo_thenReturns404Test() throws Exception {
+        // given
+        final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", null, null);
+        given(todoService.updateTodo(eq(404L), any(TodoUpdateRequest.class))).willThrow(new TodoNotFoundException(404L));
+
+        // when
+        // then
+        mockMvc.perform(put("/todos/404")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void givenBlankTitleInUpdateRequestBody_whenPutTodo_thenReturns400Test() throws Exception {
+        // given
+        final TodoUpdateRequest request = new TodoUpdateRequest(" ", null, null);
+
+        // when
+        // then
+        mockMvc.perform(put("/todos/1")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        then(todoService).should(never()).updateTodo(any(), any());
     }
 }

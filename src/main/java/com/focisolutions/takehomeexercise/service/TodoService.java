@@ -2,6 +2,7 @@ package com.focisolutions.takehomeexercise.service;
 
 import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
 import java.util.List;
 
 /**
@@ -32,4 +33,14 @@ public interface TodoService {
      * @return all existing Todos, empty if none exist
      */
     List<TodoResponse> findAllTodos();
+
+    /**
+     * Updates the title, description, and due date of an existing Todo.
+     *
+     * @param id the Todo id
+     * @param request the validated update request
+     * @return the updated Todo
+     * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
+     */
+    TodoResponse updateTodo(Long id, TodoUpdateRequest request);
 }
