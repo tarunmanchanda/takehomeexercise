@@ -37,3 +37,6 @@ build/
 
 ### Claude Code ###
 .claude/settings.local.json
+
+### H2 database files ###
+data/
