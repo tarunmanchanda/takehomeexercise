@@ -19,7 +19,7 @@ class TodoRepositoryTest {
     @Test
     void givenNewTodo_whenSaved_thenIdIsGeneratedAndCreatedAtIsPopulatedTest() {
         // given
-        final Todo todo = new Todo("Buy milk", "2 litres", LocalDate.of(2026, 7, 10));
+        final Todo todo = Todo.builder().title("Buy milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10)).build();
 
         // when
         final Todo saved = todoRepository.saveAndFlush(todo);
@@ -32,7 +32,7 @@ class TodoRepositoryTest {
     @Test
     void givenNewTodo_whenSaved_thenIsCompletedDefaultsToFalseTest() {
         // given
-        final Todo todo = new Todo("Buy milk", null, null);
+        final Todo todo = Todo.builder().title("Buy milk").build();
 
         // when
         final Todo saved = todoRepository.saveAndFlush(todo);
@@ -44,7 +44,7 @@ class TodoRepositoryTest {
     @Test
     void givenSavedTodo_whenFindById_thenReturnsMatchingTodoTest() {
         // given
-        final Todo saved = todoRepository.saveAndFlush(new Todo("Buy milk", null, null));
+        final Todo saved = todoRepository.saveAndFlush(Todo.builder().title("Buy milk").build());
 
         // when
         final Optional<Todo> found = todoRepository.findById(saved.getId());

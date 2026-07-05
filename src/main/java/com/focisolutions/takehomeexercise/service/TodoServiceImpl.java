@@ -24,7 +24,11 @@ class TodoServiceImpl implements TodoService {
 
     @Override
     public TodoResponse createTodo(final TodoCreateRequest request) {
-        final Todo todo = new Todo(request.title(), request.description(), request.dueDate());
+        final Todo todo = Todo.builder()
+                .title(request.title())
+                .description(request.description())
+                .dueDate(request.dueDate())
+                .build();
         final Todo saved = todoRepository.save(todo);
         log.info("Created todo {}", saved.getId());
         return todoMapper.toResponse(saved);

@@ -61,3 +61,7 @@ Mirrored from `~/.claude/CLAUDE.md` (global) — update both if these change.
 18. Javadoc required on all public classes and public methods in service/API-facing layers — one-line summary minimum, `@param`/`@return`/`@throws` when non-obvious.
 19. Package-private over public as the default visibility — only widen to public when a class/method is genuinely used outside its package.
 20. Configuration via `@ConfigurationProperties` with typed, immutable config classes (records) — never inject raw values with scattered `@Value("${...}")` across the codebase.
+
+### Project-specific addition (not mirrored to global)
+
+21. Use Lombok's `@Builder` for constructing objects with multiple fields (e.g. JPA entities) instead of hand-written multi-arg constructors. Pair with `@NoArgsConstructor(access = AccessLevel.PROTECTED)` (JPA requires a no-arg constructor) and `@AllArgsConstructor(access = AccessLevel.PRIVATE)` to back the builder. Exception classes and other classes with a single, obvious constructor are exempt — a builder adds no value there.

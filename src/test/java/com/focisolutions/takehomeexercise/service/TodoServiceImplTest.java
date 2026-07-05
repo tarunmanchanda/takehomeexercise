@@ -40,7 +40,7 @@ class TodoServiceImplTest {
     void givenValidCreateRequest_whenCreateTodo_thenSavesAndReturnsMappedResponseTest() {
         // given
         final TodoCreateRequest request = new TodoCreateRequest("Buy milk", "2 litres", LocalDate.of(2026, 7, 10));
-        final Todo saved = new Todo("Buy milk", "2 litres", LocalDate.of(2026, 7, 10));
+        final Todo saved = Todo.builder().title("Buy milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10)).build();
         final TodoResponse response = new TodoResponse(1L, "Buy milk", "2 litres", LocalDate.of(2026, 7, 10), false, Instant.now());
         given(todoRepository.save(any(Todo.class))).willReturn(saved);
         given(todoMapper.toResponse(saved)).willReturn(response);
@@ -57,7 +57,7 @@ class TodoServiceImplTest {
     void givenExistingId_whenFindTodoById_thenReturnsMappedResponseTest() {
         // given
         final Long id = 1L;
-        final Todo todo = new Todo("Buy milk", null, null);
+        final Todo todo = Todo.builder().title("Buy milk").build();
         final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, false, Instant.now());
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoMapper.toResponse(todo)).willReturn(response);
@@ -85,7 +85,7 @@ class TodoServiceImplTest {
     @Test
     void givenTodosExist_whenFindAllTodos_thenReturnsMappedListTest() {
         // given
-        final Todo todo = new Todo("Buy milk", null, null);
+        final Todo todo = Todo.builder().title("Buy milk").build();
         final TodoResponse response = new TodoResponse(1L, "Buy milk", null, null, false, Instant.now());
         given(todoRepository.findAll()).willReturn(List.of(todo));
         given(todoMapper.toResponse(todo)).willReturn(response);
@@ -102,7 +102,7 @@ class TodoServiceImplTest {
     void givenExistingIdAndValidUpdateRequest_whenUpdateTodo_thenUpdatesFieldsAndReturnsMappedResponseTest() {
         // given
         final Long id = 1L;
-        final Todo todo = new Todo("Buy milk", null, null);
+        final Todo todo = Todo.builder().title("Buy milk").build();
         final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10));
         final TodoResponse response = new TodoResponse(id, "Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10), false, Instant.now());
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
@@ -135,7 +135,7 @@ class TodoServiceImplTest {
     void givenIncompleteTodo_whenMarkTodoCompleted_thenSetsCompletedTrueTest() {
         // given
         final Long id = 1L;
-        final Todo todo = new Todo("Buy milk", null, null);
+        final Todo todo = Todo.builder().title("Buy milk").build();
         final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, true, Instant.now());
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoRepository.save(todo)).willReturn(todo);
@@ -154,7 +154,7 @@ class TodoServiceImplTest {
     void givenAlreadyCompletedTodo_whenMarkTodoCompleted_thenRemainsCompletedTest() {
         // given
         final Long id = 1L;
-        final Todo todo = new Todo("Buy milk", null, null);
+        final Todo todo = Todo.builder().title("Buy milk").build();
         todo.markCompleted();
         final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, true, Instant.now());
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
@@ -185,7 +185,7 @@ class TodoServiceImplTest {
     void givenCompletedTodo_whenMarkTodoIncomplete_thenSetsCompletedFalseTest() {
         // given
         final Long id = 1L;
-        final Todo todo = new Todo("Buy milk", null, null);
+        final Todo todo = Todo.builder().title("Buy milk").build();
         todo.markCompleted();
         final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, false, Instant.now());
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
@@ -205,7 +205,7 @@ class TodoServiceImplTest {
     void givenAlreadyIncompleteTodo_whenMarkTodoIncomplete_thenRemainsIncompleteTest() {
         // given
         final Long id = 1L;
-        final Todo todo = new Todo("Buy milk", null, null);
+        final Todo todo = Todo.builder().title("Buy milk").build();
         final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, false, Instant.now());
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoRepository.save(todo)).willReturn(todo);

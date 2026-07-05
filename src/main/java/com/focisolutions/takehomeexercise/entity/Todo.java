@@ -10,13 +10,17 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "todos")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Todo {
 
     @Id
@@ -35,13 +39,6 @@ public class Todo {
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
-
-    public Todo(final String title, final String description, final LocalDate dueDate) {
-        this.title = title;
-        this.description = description;
-        this.dueDate = dueDate;
-        this.completed = false;
-    }
 
     @PrePersist
     void onCreate() {
