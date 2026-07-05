@@ -1,5 +1,6 @@
 package com.focisolutions.takehomeexercise.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -8,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +17,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -23,6 +27,9 @@ class TodoLifecycleIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void givenNewTodo_whenFullLifecycleIsExercised_thenAllStateTransitionsPersistCorrectlyTest() throws Exception {
@@ -38,6 +45,9 @@ class TodoLifecycleIntegrationTest {
                 .andExpect(jsonPath("$.completed").value(false))
                 .andReturn();
         final String location = createResult.getResponse().getHeader("Location");
+        final JsonNode created = objectMapper.readTree(createResult.getResponse().getContentAsString());
+        final Instant originalUpdatedAt = Instant.parse(created.get("updatedAt").asString());
+        assertThat(originalUpdatedAt).isEqualTo(Instant.parse(created.get("createdAt").asString()));
 
         // then: get returns the created todo
         mockMvc.perform(get(location))
@@ -48,11 +58,16 @@ class TodoLifecycleIntegrationTest {
         // when: update
         final String updateBody = """
                 {"title":"Buy oat milk","description":"2 litres","dueDate":"2026-07-11"}""";
-        mockMvc.perform(put(location)
+        final MvcResult updateResult = mockMvc.perform(put(location)
                         .contentType("application/json")
                         .content(updateBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value("Buy oat milk"));
+                .andExpect(jsonPath("$.title").value("Buy oat milk"))
+                .andReturn();
+
+        // then: updatedAt was refreshed
+        final JsonNode updated = objectMapper.readTree(updateResult.getResponse().getContentAsString());
+        assertThat(Instant.parse(updated.get("updatedAt").asString())).isAfter(originalUpdatedAt);
 
         // when: complete
         mockMvc.perform(patch(location + "/complete"))

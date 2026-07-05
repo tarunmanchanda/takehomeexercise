@@ -11,5 +11,6 @@ public record TodoResponse(
         String description,
         LocalDate dueDate,
         boolean completed,
-        Instant createdAt) {
+        Instant createdAt,
+        Instant updatedAt) {
 }

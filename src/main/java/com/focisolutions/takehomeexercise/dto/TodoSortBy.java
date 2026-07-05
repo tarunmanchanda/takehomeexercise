@@ -1,5 +1,8 @@
 package com.focisolutions.takehomeexercise.dto;
 
+import lombok.Getter;
+
+@Getter
 public enum TodoSortBy {
     TITLE("title"),
     DUE_DATE("dueDate"),
@@ -11,7 +14,4 @@ public enum TodoSortBy {
         this.fieldName = fieldName;
     }
 
-    public String getFieldName() {
-        return fieldName;
-    }
 }

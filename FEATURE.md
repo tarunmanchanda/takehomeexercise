@@ -14,6 +14,7 @@ A RESTful JSON API for managing personal to-do items: create, list, view, update
 | `dueDate` | `LocalDate` | no | ISO-8601 (`YYYY-MM-DD`) |
 | `completed` | `boolean` | — | defaults `false`; server-controlled, not settable via create/update. Corresponds to the assignment's `isCompleted` flag — named `completed` in the Java model/JSON body (idiomatic Java field naming; a field literally named `isCompleted` produces confusing `isIsCompleted`-style accessors and Jackson serialization quirks) |
 | `createdAt` | `Instant` | — | set once at creation, immutable thereafter |
+| `updatedAt` | `Instant` | — | equals `createdAt` at creation; refreshed to the current time whenever the record changes (update, complete, or incomplete) |
 
 ## Non-functional requirements
 
@@ -31,7 +32,7 @@ A RESTful JSON API for managing personal to-do items: create, list, view, update
 
 **Given** a valid request body with at least a non-blank `title`
 **When** a client POSTs to `/todos`
-**Then** the API returns `201 Created`, a `Location` header pointing at the new resource (`/todos/{id}`), and a body containing the created Todo with `completed=false`, a server-generated `id` and `createdAt`, and the submitted `title`/`description`/`dueDate`.
+**Then** the API returns `201 Created`, a `Location` header pointing at the new resource (`/todos/{id}`), and a body containing the created Todo with `completed=false`, a server-generated `id`, `createdAt` and `updatedAt` (equal to each other), and the submitted `title`/`description`/`dueDate`.
 
 **Given** a request body with a blank or missing `title`
 **When** a client POSTs to `/todos`
@@ -97,7 +98,7 @@ All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`
 
 **Given** an existing Todo and a valid request body (non-blank `title`, optional `description`/`dueDate`)
 **When** a client sends `PUT /todos/{id}`
-**Then** the API returns `200 OK` with the updated `title`/`description`/`dueDate`, leaving `completed`, `createdAt`, and `id` unchanged.
+**Then** the API returns `200 OK` with the updated `title`/`description`/`dueDate`, a refreshed `updatedAt` (later than the original), and `completed`/`createdAt`/`id` unchanged.
 
 **Given** an `id` with no matching Todo
 **When** a client sends `PUT /todos/{id}`
@@ -121,7 +122,7 @@ All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`
 
 **Given** an existing, incomplete Todo
 **When** a client sends `PATCH /todos/{id}/complete`
-**Then** the API returns `200 OK` with `completed=true`.
+**Then** the API returns `200 OK` with `completed=true` and a refreshed `updatedAt` (later than the original).
 
 **Given** an existing Todo that is already complete
 **When** a client sends `PATCH /todos/{id}/complete`
@@ -141,7 +142,7 @@ All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`
 
 **Given** an existing, completed Todo
 **When** a client sends `PATCH /todos/{id}/incomplete`
-**Then** the API returns `200 OK` with `completed=false`.
+**Then** the API returns `200 OK` with `completed=false` and a refreshed `updatedAt` (later than the original).
 
 **Given** an existing Todo that is already incomplete
 **When** a client sends `PATCH /todos/{id}/incomplete`

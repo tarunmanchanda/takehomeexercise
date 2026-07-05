@@ -3,6 +3,7 @@ package com.focisolutions.takehomeexercise.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.focisolutions.takehomeexercise.entity.Todo;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,34 @@ class TodoRepositoryTest {
         // then
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    void givenNewTodo_whenSaved_thenUpdatedAtEqualsCreatedAtTest() {
+        // given
+        final Todo todo = Todo.builder().title("Buy milk").build();
+
+        // when
+        final Todo saved = todoRepository.saveAndFlush(todo);
+
+        // then
+        assertThat(saved.getUpdatedAt()).isEqualTo(saved.getCreatedAt());
+    }
+
+    @Test
+    void givenSavedTodo_whenFieldsAreUpdatedAndFlushed_thenUpdatedAtChangesButCreatedAtStaysTheSameTest() {
+        // given
+        final Todo saved = todoRepository.saveAndFlush(Todo.builder().title("Buy milk").build());
+        final Instant originalCreatedAt = saved.getCreatedAt();
+        final Instant originalUpdatedAt = saved.getUpdatedAt();
+
+        // when
+        saved.updateDetails("Buy oat milk", null, null);
+        final Todo updated = todoRepository.saveAndFlush(saved);
+
+        // then
+        assertThat(updated.getCreatedAt()).isEqualTo(originalCreatedAt);
+        assertThat(updated.getUpdatedAt()).isAfter(originalUpdatedAt);
     }
 
     @Test
