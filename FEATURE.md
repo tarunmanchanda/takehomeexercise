@@ -19,7 +19,7 @@ A RESTful JSON API for managing personal to-do items: create, list, view, update
 
 - **RMM Level 2**: correct resource-oriented URIs, correct HTTP verbs, correct HTTP status codes for every outcome. (Level 3 hypermedia/HATEOAS is documented as a deliberate extension point, not implemented — see `.claude/skills/rest-api-standards/SKILL.md`.)
 - **Persistence**: file-based H2 (`jdbc:h2:file:...`) — data survives application restarts, satisfying the requirement literally. Repository/service layering (Spring Data JPA) means swapping to a production database later is a datasource/dependency config change only, with zero changes to service or controller code.
-- **Validation**: enforced via Bean Validation (`@Valid`/`@NotBlank`) on request DTOs at the controller boundary.
+- **Validation**: enforced via Bean Validation (`@Valid`/`@NotBlank`) on request DTOs at the controller boundary, plus `@Size` limits on free-text fields (`title` max 200 chars, `description` max 2000 chars), `@Positive` on numeric path identifiers (`id`), and friendly `400` responses (not a generic error page) for malformed query parameters such as an unrecognized filter/sort value.
 - **Error handling**: centralized via `@ControllerAdvice` — controllers never contain try/catch for business errors.
 
 ## Capabilities
@@ -35,6 +35,10 @@ A RESTful JSON API for managing personal to-do items: create, list, view, update
 **Given** a request body with a blank or missing `title`
 **When** a client POSTs to `/todos`
 **Then** the API returns `400 Bad Request` with a validation error describing the offending field, and no Todo is persisted.
+
+**Given** a request body with a `title` longer than 200 characters or a `description` longer than 2000 characters
+**When** a client POSTs to `/todos`
+**Then** the API returns `400 Bad Request` describing the offending field, and no Todo is persisted.
 
 ### 2. List Todos (with filtering and sorting)
 
@@ -82,6 +86,10 @@ All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`
 **When** a client sends `GET /todos/{id}`
 **Then** the API returns `404 Not Found`.
 
+**Given** a non-positive `id` (e.g. `0` or `-1`)
+**When** a client sends `GET /todos/{id}`
+**Then** the API returns `400 Bad Request` describing the invalid `id`.
+
 ### 4. Update a Todo
 
 `PUT /todos/{id}`
@@ -97,6 +105,14 @@ All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`
 **Given** an existing Todo and a request body with a blank `title`
 **When** a client sends `PUT /todos/{id}`
 **Then** the API returns `400 Bad Request` and the existing Todo is left unmodified.
+
+**Given** an existing Todo and a request body with a `title` longer than 200 characters or a `description` longer than 2000 characters
+**When** a client sends `PUT /todos/{id}`
+**Then** the API returns `400 Bad Request` and the existing Todo is left unmodified.
+
+**Given** a non-positive `id`
+**When** a client sends `PUT /todos/{id}`
+**Then** the API returns `400 Bad Request` describing the invalid `id`.
 
 ### 5. Mark a Todo complete
 
@@ -114,6 +130,10 @@ All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`
 **When** a client sends `PATCH /todos/{id}/complete`
 **Then** the API returns `404 Not Found`.
 
+**Given** a non-positive `id`
+**When** a client sends `PATCH /todos/{id}/complete`
+**Then** the API returns `400 Bad Request` describing the invalid `id`.
+
 ### 6. Mark a Todo incomplete
 
 `PATCH /todos/{id}/incomplete`
@@ -130,6 +150,10 @@ All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`
 **When** a client sends `PATCH /todos/{id}/incomplete`
 **Then** the API returns `404 Not Found`.
 
+**Given** a non-positive `id`
+**When** a client sends `PATCH /todos/{id}/incomplete`
+**Then** the API returns `400 Bad Request` describing the invalid `id`.
+
 ### 7. Delete a Todo
 
 `DELETE /todos/{id}`
@@ -141,3 +165,7 @@ All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`
 **Given** an `id` with no matching Todo
 **When** a client sends `DELETE /todos/{id}`
 **Then** the API returns `404 Not Found` and no state changes.
+
+**Given** a non-positive `id`
+**When** a client sends `DELETE /todos/{id}`
+**Then** the API returns `400 Bad Request` describing the invalid `id`.

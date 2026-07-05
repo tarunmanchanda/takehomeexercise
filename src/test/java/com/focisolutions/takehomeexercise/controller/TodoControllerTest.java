@@ -82,6 +82,20 @@ class TodoControllerTest {
     }
 
     @Test
+    void givenTitleExceedingMaxLength_whenPostToTodos_thenReturns400Test() throws Exception {
+        // given
+        final TodoCreateRequest request = TodoCreateRequest.builder().title("a".repeat(201)).build();
+
+        // when
+        // then
+        mockMvc.perform(post("/todos")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        then(todoService).should(never()).createTodo(any());
+    }
+
+    @Test
     void givenExistingId_whenGetTodoById_thenReturns200Test() throws Exception {
         // given
         final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
@@ -105,6 +119,17 @@ class TodoControllerTest {
         // then
         mockMvc.perform(get("/todos/404")).andExpect(status().isNotFound());
         then(todoService).should().findTodoById(404L);
+    }
+
+    @Test
+    void givenNonPositiveId_whenGetTodoById_thenReturns400Test() throws Exception {
+        // given
+        // (no stubbing needed; validation fails before the service is invoked)
+
+        // when
+        // then
+        mockMvc.perform(get("/todos/0")).andExpect(status().isBadRequest());
+        then(todoService).should(never()).findTodoById(any());
     }
 
     @Test
@@ -247,6 +272,34 @@ class TodoControllerTest {
     }
 
     @Test
+    void givenDescriptionExceedingMaxLength_whenPutTodo_thenReturns400Test() throws Exception {
+        // given
+        final TodoUpdateRequest request = TodoUpdateRequest.builder().title("Buy milk").description("a".repeat(2001)).build();
+
+        // when
+        // then
+        mockMvc.perform(put("/todos/1")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        then(todoService).should(never()).updateTodo(any(), any());
+    }
+
+    @Test
+    void givenNonPositiveId_whenPutTodo_thenReturns400Test() throws Exception {
+        // given
+        final TodoUpdateRequest request = TodoUpdateRequest.builder().title("Buy milk").build();
+
+        // when
+        // then
+        mockMvc.perform(put("/todos/0")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        then(todoService).should(never()).updateTodo(any(), any());
+    }
+
+    @Test
     void givenIncompleteTodoId_whenPatchComplete_thenReturns200WithCompletedTrueTest() throws Exception {
         // given
         final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(true).createdAt(Instant.now()).build();
@@ -268,6 +321,17 @@ class TodoControllerTest {
         // when
         // then
         mockMvc.perform(patch("/todos/404/complete")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void givenNonPositiveId_whenPatchComplete_thenReturns400Test() throws Exception {
+        // given
+        // (no stubbing needed; validation fails before the service is invoked)
+
+        // when
+        // then
+        mockMvc.perform(patch("/todos/0/complete")).andExpect(status().isBadRequest());
+        then(todoService).should(never()).markCompleted(any());
     }
 
     @Test
@@ -295,6 +359,17 @@ class TodoControllerTest {
     }
 
     @Test
+    void givenNonPositiveId_whenPatchIncomplete_thenReturns400Test() throws Exception {
+        // given
+        // (no stubbing needed; validation fails before the service is invoked)
+
+        // when
+        // then
+        mockMvc.perform(patch("/todos/0/incomplete")).andExpect(status().isBadRequest());
+        then(todoService).should(never()).markIncomplete(any());
+    }
+
+    @Test
     void givenId_whenDeleteEndpointIsCalled_thenDeleteTheTodoAttachedToThatIdTest() throws Exception {
         // given
         // (todoService.deleteTodo is void; no exception stubbed means it succeeds)
@@ -313,5 +388,16 @@ class TodoControllerTest {
         // when
         // then
         mockMvc.perform(delete("/todos/404")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void givenNonPositiveId_whenDeleteEndpointIsCalled_thenReturns400Test() throws Exception {
+        // given
+        // (no stubbing needed; validation fails before the service is invoked)
+
+        // when
+        // then
+        mockMvc.perform(delete("/todos/0")).andExpect(status().isBadRequest());
+        then(todoService).should(never()).deleteTodo(any());
     }
 }
