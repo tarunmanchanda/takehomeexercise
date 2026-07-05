@@ -29,6 +29,7 @@ This project pins `spring-boot-starter-parent` to `4.1.0`, which restructured st
 - Web starter is `spring-boot-starter-webmvc`, not `spring-boot-starter-web`.
 - Test starter is `spring-boot-starter-webmvc-test`, not `spring-boot-starter-test`.
 - `@WebMvcTest` lives in `org.springframework.boot.webmvc.test.autoconfigure`, not `org.springframework.boot.test.autoconfigure.web.servlet`.
+- `@DataJpaTest` requires its own `spring-boot-starter-data-jpa-test` dependency (test scope) and lives in `org.springframework.boot.data.jpa.test.autoconfigure`, not bundled with `spring-boot-starter-webmvc-test` and not at the Boot 3-era `org.springframework.boot.test.autoconfigure.orm.jpa` path.
 - IDE dependency-resolution warnings for `4.1.0` artifacts can be stale/wrong — confirm with `./mvnw dependency:tree` before trusting them.
 
 ## Testing
