@@ -45,8 +45,11 @@ class TodoControllerTest {
     @Test
     void givenValidCreateRequestBody_whenPostToTodos_thenReturns201WithLocationHeaderTest() throws Exception {
         // given
-        final TodoCreateRequest request = new TodoCreateRequest("Buy milk", "2 litres", LocalDate.of(2026, 7, 10));
-        final TodoResponse response = new TodoResponse(1L, "Buy milk", "2 litres", LocalDate.of(2026, 7, 10), false, Instant.now());
+        final TodoCreateRequest request = TodoCreateRequest.builder()
+                .title("Buy milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10)).build();
+        final TodoResponse response = TodoResponse.builder()
+                .id(1L).title("Buy milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10))
+                .completed(false).createdAt(Instant.now()).build();
         given(todoService.createTodo(request)).willReturn(response);
 
         // when
@@ -64,7 +67,7 @@ class TodoControllerTest {
     @Test
     void givenBlankTitleInCreateRequestBody_whenPostToTodos_thenReturns400Test() throws Exception {
         // given
-        final TodoCreateRequest request = new TodoCreateRequest(" ", null, null);
+        final TodoCreateRequest request = TodoCreateRequest.builder().title(" ").build();
 
         // when
         // then
@@ -78,7 +81,7 @@ class TodoControllerTest {
     @Test
     void givenExistingId_whenGetTodoById_thenReturns200Test() throws Exception {
         // given
-        final TodoResponse response = new TodoResponse(1L, "Buy milk", null, null, false, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
         given(todoService.findTodoById(1L)).willReturn(response);
 
         // when
@@ -104,7 +107,7 @@ class TodoControllerTest {
     @Test
     void givenTodosExist_whenGetAllTodos_thenReturns200WithListTest() throws Exception {
         // given
-        final TodoResponse response = new TodoResponse(1L, "Buy milk", null, null, false, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
         given(todoService.findAllTodos()).willReturn(List.of(response));
 
         // when
@@ -118,8 +121,11 @@ class TodoControllerTest {
     @Test
     void givenExistingIdAndValidBody_whenPutTodo_thenReturns200WithUpdatedFieldsTest() throws Exception {
         // given
-        final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10));
-        final TodoResponse response = new TodoResponse(1L, "Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10), false, Instant.now());
+        final TodoUpdateRequest request = TodoUpdateRequest.builder()
+                .title("Buy oat milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10)).build();
+        final TodoResponse response = TodoResponse.builder()
+                .id(1L).title("Buy oat milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10))
+                .completed(false).createdAt(Instant.now()).build();
         given(todoService.updateTodo(eq(1L), any(TodoUpdateRequest.class))).willReturn(response);
 
         // when
@@ -135,7 +141,7 @@ class TodoControllerTest {
     @Test
     void givenNonExistingId_whenPutTodo_thenReturns404Test() throws Exception {
         // given
-        final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", null, null);
+        final TodoUpdateRequest request = TodoUpdateRequest.builder().title("Buy oat milk").build();
         given(todoService.updateTodo(eq(404L), any(TodoUpdateRequest.class))).willThrow(new TodoNotFoundException(404L));
 
         // when
@@ -149,7 +155,7 @@ class TodoControllerTest {
     @Test
     void givenBlankTitleInUpdateRequestBody_whenPutTodo_thenReturns400Test() throws Exception {
         // given
-        final TodoUpdateRequest request = new TodoUpdateRequest(" ", null, null);
+        final TodoUpdateRequest request = TodoUpdateRequest.builder().title(" ").build();
 
         // when
         // then
@@ -163,7 +169,7 @@ class TodoControllerTest {
     @Test
     void givenIncompleteTodoId_whenPatchComplete_thenReturns200WithCompletedTrueTest() throws Exception {
         // given
-        final TodoResponse response = new TodoResponse(1L, "Buy milk", null, null, true, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(true).createdAt(Instant.now()).build();
         given(todoService.markCompleted(1L)).willReturn(response);
 
         // when
@@ -187,7 +193,7 @@ class TodoControllerTest {
     @Test
     void givenCompletedTodoId_whenPatchIncomplete_thenReturns200WithCompletedFalseTest() throws Exception {
         // given
-        final TodoResponse response = new TodoResponse(1L, "Buy milk", null, null, false, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
         given(todoService.markIncomplete(1L)).willReturn(response);
 
         // when

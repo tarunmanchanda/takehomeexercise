@@ -39,9 +39,12 @@ class TodoServiceImplTest {
     @Test
     void givenValidCreateRequest_whenCreateTodo_thenSavesAndReturnsMappedResponseTest() {
         // given
-        final TodoCreateRequest request = new TodoCreateRequest("Buy milk", "2 litres", LocalDate.of(2026, 7, 10));
+        final TodoCreateRequest request = TodoCreateRequest.builder()
+                .title("Buy milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10)).build();
         final Todo saved = Todo.builder().title("Buy milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10)).build();
-        final TodoResponse response = new TodoResponse(1L, "Buy milk", "2 litres", LocalDate.of(2026, 7, 10), false, Instant.now());
+        final TodoResponse response = TodoResponse.builder()
+                .id(1L).title("Buy milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10))
+                .completed(false).createdAt(Instant.now()).build();
         given(todoRepository.save(any(Todo.class))).willReturn(saved);
         given(todoMapper.toResponse(saved)).willReturn(response);
 
@@ -58,7 +61,7 @@ class TodoServiceImplTest {
         // given
         final Long id = 1L;
         final Todo todo = Todo.builder().title("Buy milk").build();
-        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, false, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(id).title("Buy milk").completed(false).createdAt(Instant.now()).build();
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoMapper.toResponse(todo)).willReturn(response);
 
@@ -86,7 +89,7 @@ class TodoServiceImplTest {
     void givenTodosExist_whenFindAllTodos_thenReturnsMappedListTest() {
         // given
         final Todo todo = Todo.builder().title("Buy milk").build();
-        final TodoResponse response = new TodoResponse(1L, "Buy milk", null, null, false, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
         given(todoRepository.findAll()).willReturn(List.of(todo));
         given(todoMapper.toResponse(todo)).willReturn(response);
 
@@ -103,8 +106,11 @@ class TodoServiceImplTest {
         // given
         final Long id = 1L;
         final Todo todo = Todo.builder().title("Buy milk").build();
-        final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10));
-        final TodoResponse response = new TodoResponse(id, "Buy oat milk", "2 litres", LocalDate.of(2026, 7, 10), false, Instant.now());
+        final TodoUpdateRequest request = TodoUpdateRequest.builder()
+                .title("Buy oat milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10)).build();
+        final TodoResponse response = TodoResponse.builder()
+                .id(id).title("Buy oat milk").description("2 litres").dueDate(LocalDate.of(2026, 7, 10))
+                .completed(false).createdAt(Instant.now()).build();
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoRepository.save(todo)).willReturn(todo);
         given(todoMapper.toResponse(todo)).willReturn(response);
@@ -122,7 +128,7 @@ class TodoServiceImplTest {
     void givenNonExistingId_whenUpdateTodo_thenThrowsTodoNotFoundExceptionTest() {
         // given
         final Long id = 404L;
-        final TodoUpdateRequest request = new TodoUpdateRequest("Buy oat milk", null, null);
+        final TodoUpdateRequest request = TodoUpdateRequest.builder().title("Buy oat milk").build();
         given(todoRepository.findById(id)).willReturn(Optional.empty());
 
         // when
@@ -136,7 +142,7 @@ class TodoServiceImplTest {
         // given
         final Long id = 1L;
         final Todo todo = Todo.builder().title("Buy milk").build();
-        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, true, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(id).title("Buy milk").completed(true).createdAt(Instant.now()).build();
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoRepository.save(todo)).willReturn(todo);
         given(todoMapper.toResponse(todo)).willReturn(response);
@@ -156,7 +162,7 @@ class TodoServiceImplTest {
         final Long id = 1L;
         final Todo todo = Todo.builder().title("Buy milk").build();
         todo.markCompleted();
-        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, true, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(id).title("Buy milk").completed(true).createdAt(Instant.now()).build();
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoRepository.save(todo)).willReturn(todo);
         given(todoMapper.toResponse(todo)).willReturn(response);
@@ -187,7 +193,7 @@ class TodoServiceImplTest {
         final Long id = 1L;
         final Todo todo = Todo.builder().title("Buy milk").build();
         todo.markCompleted();
-        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, false, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(id).title("Buy milk").completed(false).createdAt(Instant.now()).build();
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoRepository.save(todo)).willReturn(todo);
         given(todoMapper.toResponse(todo)).willReturn(response);
@@ -206,7 +212,7 @@ class TodoServiceImplTest {
         // given
         final Long id = 1L;
         final Todo todo = Todo.builder().title("Buy milk").build();
-        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, false, Instant.now());
+        final TodoResponse response = TodoResponse.builder().id(id).title("Buy milk").completed(false).createdAt(Instant.now()).build();
         given(todoRepository.findById(id)).willReturn(Optional.of(todo));
         given(todoRepository.save(todo)).willReturn(todo);
         given(todoMapper.toResponse(todo)).willReturn(response);

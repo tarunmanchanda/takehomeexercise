@@ -13,7 +13,11 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(TodoNotFoundException.class)
     ResponseEntity<ErrorResponse> handleTodoNotFound(final TodoNotFoundException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(exception.getMessage()));
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+                .message(exception.getMessage())
+                .details(List.of())
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -21,6 +25,10 @@ class GlobalExceptionHandler {
         final List<String> details = exception.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .toList();
-        return ResponseEntity.badRequest().body(ErrorResponse.of("Validation failed", details));
+        final ErrorResponse errorResponse = ErrorResponse.builder()
+                .message("Validation failed")
+                .details(details)
+                .build();
+        return ResponseEntity.badRequest().body(errorResponse);
     }
 }
