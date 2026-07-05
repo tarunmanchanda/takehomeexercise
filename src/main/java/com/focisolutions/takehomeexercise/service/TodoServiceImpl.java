@@ -67,6 +67,15 @@ class TodoServiceImpl implements TodoService {
         return todoMapper.toResponse(saved);
     }
 
+    @Override
+    public void deleteTodo(final Long id) {
+        if (!todoRepository.existsById(id)) {
+            throw new TodoNotFoundException(id);
+        }
+        todoRepository.deleteById(id);
+        log.info("Deleted todo {}", id);
+    }
+
     private Todo getTodoOrThrow(final Long id) {
         return todoRepository.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
     }

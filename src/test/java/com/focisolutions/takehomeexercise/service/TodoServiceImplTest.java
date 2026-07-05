@@ -230,4 +230,29 @@ class TodoServiceImplTest {
         assertThatThrownBy(() -> todoServiceImpl.markIncomplete(id)).isInstanceOf(TodoNotFoundException.class);
         then(todoRepository).should(never()).save(any(Todo.class));
     }
+
+    @Test
+    void givenId_whenDeleteEndpointIsCalled_thenDeleteTheTodoAttachedToThatIdTest() {
+        // given
+        final Long id = 1L;
+        given(todoRepository.existsById(id)).willReturn(true);
+
+        // when
+        todoServiceImpl.deleteTodo(id);
+
+        // then
+        then(todoRepository).should().deleteById(id);
+    }
+
+    @Test
+    void givenNonExistingId_whenDeleteTodo_thenThrowsTodoNotFoundExceptionTest() {
+        // given
+        final Long id = 404L;
+        given(todoRepository.existsById(id)).willReturn(false);
+
+        // when
+        // then
+        assertThatThrownBy(() -> todoServiceImpl.deleteTodo(id)).isInstanceOf(TodoNotFoundException.class);
+        then(todoRepository).should(never()).deleteById(any());
+    }
 }

@@ -61,4 +61,12 @@ public interface TodoService {
      * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
      */
     TodoResponse markIncomplete(Long id);
+
+    /**
+     * Deletes a Todo.
+     *
+     * @param id the Todo id
+     * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
+     */
+    void deleteTodo(Long id);
 }

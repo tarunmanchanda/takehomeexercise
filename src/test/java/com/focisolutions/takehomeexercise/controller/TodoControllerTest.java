@@ -4,7 +4,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -204,5 +206,26 @@ class TodoControllerTest {
         // when
         // then
         mockMvc.perform(patch("/todos/404/incomplete")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void givenId_whenDeleteEndpointIsCalled_thenDeleteTheTodoAttachedToThatIdTest() throws Exception {
+        // given
+        // (todoService.deleteTodo is void; no exception stubbed means it succeeds)
+
+        // when
+        // then
+        mockMvc.perform(delete("/todos/1")).andExpect(status().isNoContent());
+        then(todoService).should().deleteTodo(1L);
+    }
+
+    @Test
+    void givenNonExistingId_whenDeleteEndpointIsCalled_thenReturns404Test() throws Exception {
+        // given
+        willThrow(new TodoNotFoundException(404L)).given(todoService).deleteTodo(404L);
+
+        // when
+        // then
+        mockMvc.perform(delete("/todos/404")).andExpect(status().isNotFound());
     }
 }
