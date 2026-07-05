@@ -1,9 +1,12 @@
 package com.focisolutions.takehomeexercise.service;
 
 import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
+import com.focisolutions.takehomeexercise.dto.TodoFilter;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.dto.TodoSortBy;
 import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
 import java.util.List;
+import org.springframework.data.domain.Sort;
 
 /**
  * Application service for managing Todo items.
@@ -28,11 +31,14 @@ public interface TodoService {
     TodoResponse findTodoById(Long id);
 
     /**
-     * Lists all Todos.
+     * Lists Todos matching the given status filter, sorted by the given field and direction.
      *
-     * @return all existing Todos, empty if none exist
+     * @param filter the status filter to apply
+     * @param sortBy the field to sort by
+     * @param direction the sort direction
+     * @return matching Todos, empty if none match
      */
-    List<TodoResponse> findAllTodos();
+    List<TodoResponse> findAllTodos(TodoFilter filter, TodoSortBy sortBy, Sort.Direction direction);
 
     /**
      * Updates the title, description, and due date of an existing Todo.

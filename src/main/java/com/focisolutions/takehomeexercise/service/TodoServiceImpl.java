@@ -1,16 +1,20 @@
 package com.focisolutions.takehomeexercise.service;
 
 import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
+import com.focisolutions.takehomeexercise.dto.TodoFilter;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.dto.TodoSortBy;
 import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
 import com.focisolutions.takehomeexercise.entity.Todo;
 import com.focisolutions.takehomeexercise.exception.TodoNotFoundException;
 import com.focisolutions.takehomeexercise.mapper.TodoMapper;
 import com.focisolutions.takehomeexercise.repository.TodoRepository;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -40,8 +44,15 @@ class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    public List<TodoResponse> findAllTodos() {
-        return todoRepository.findAll().stream().map(todoMapper::toResponse).toList();
+    public List<TodoResponse> findAllTodos(final TodoFilter filter, final TodoSortBy sortBy, final Sort.Direction direction) {
+        final Sort sort = Sort.by(direction, sortBy.getFieldName());
+        final List<Todo> todos = switch (filter) {
+            case ALL -> todoRepository.findAll(sort);
+            case COMPLETED -> todoRepository.findByCompleted(true, sort);
+            case INCOMPLETE -> todoRepository.findByCompleted(false, sort);
+            case OVERDUE -> todoRepository.findByCompletedFalseAndDueDateBefore(LocalDate.now(), sort);
+        };
+        return todos.stream().map(todoMapper::toResponse).toList();
     }
 
     @Override

@@ -36,13 +36,39 @@ A RESTful JSON API for managing personal to-do items: create, list, view, update
 **When** a client POSTs to `/todos`
 **Then** the API returns `400 Bad Request` with a validation error describing the offending field, and no Todo is persisted.
 
-### 2. List all Todos
+### 2. List Todos (with filtering and sorting)
 
-`GET /todos`
+`GET /todos?status={ALL|COMPLETED|INCOMPLETE|OVERDUE}&sortBy={TITLE|DUE_DATE|CREATED_AT}&direction={ASC|DESC}`
+
+All three query params are optional (defaults: `status=ALL`, `sortBy=CREATED_AT`, `direction=ASC`) and accepted case-insensitively (e.g. `status=completed` works the same as `status=COMPLETED`). "Overdue" means `completed=false AND dueDate` is set and before today — a completed item past its due date is not overdue.
 
 **Given** any number of existing Todos (including zero)
-**When** a client sends `GET /todos`
-**Then** the API returns `200 OK` with a JSON array of all Todos (an empty array if none exist), each with essential details (`id`, `title`, `dueDate`, `completed`).
+**When** a client sends `GET /todos` with no query params
+**Then** the API returns `200 OK` with a JSON array of all Todos (an empty array if none exist), sorted by `createdAt` ascending, each with essential details (`id`, `title`, `dueDate`, `completed`).
+
+**Given** existing Todos with a mix of completed and incomplete items
+**When** a client sends `GET /todos?status=COMPLETED`
+**Then** the API returns `200 OK` with only the completed Todos.
+
+**Given** existing Todos with a mix of completed and incomplete items
+**When** a client sends `GET /todos?status=INCOMPLETE`
+**Then** the API returns `200 OK` with only the incomplete Todos.
+
+**Given** existing Todos where one incomplete Todo has a `dueDate` before today, one completed Todo has a `dueDate` before today, and one incomplete Todo has no `dueDate`
+**When** a client sends `GET /todos?status=OVERDUE`
+**Then** the API returns `200 OK` with only the incomplete Todo whose `dueDate` is before today — the completed one and the one with no `dueDate` are excluded.
+
+**Given** any number of existing Todos
+**When** a client sends `GET /todos?status=bogus`
+**Then** the API returns `400 Bad Request` describing the invalid `status` value, and no Todos are returned.
+
+**Given** existing Todos with different `title`/`dueDate`/`createdAt` values
+**When** a client sends `GET /todos?sortBy=TITLE&direction=DESC` (or `DUE_DATE`/`CREATED_AT`, `ASC`/`DESC`)
+**Then** the API returns `200 OK` with the Todos ordered by the requested field and direction.
+
+**Given** any number of existing Todos
+**When** a client sends `GET /todos?sortBy=bogus` or `GET /todos?direction=bogus`
+**Then** the API returns `400 Bad Request` describing the invalid value, and no Todos are returned.
 
 ### 3. View a Todo by id
 

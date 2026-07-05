@@ -16,7 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
+import com.focisolutions.takehomeexercise.dto.TodoFilter;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.dto.TodoSortBy;
 import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
 import com.focisolutions.takehomeexercise.exception.TodoNotFoundException;
 import com.focisolutions.takehomeexercise.service.TodoService;
@@ -26,6 +28,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -105,17 +108,94 @@ class TodoControllerTest {
     }
 
     @Test
-    void givenTodosExist_whenGetAllTodos_thenReturns200WithListTest() throws Exception {
+    void givenNoQueryParams_whenGetAllTodos_thenUsesDefaultFilterAndSortTest() throws Exception {
         // given
         final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
-        given(todoService.findAllTodos()).willReturn(List.of(response));
+        given(todoService.findAllTodos(TodoFilter.ALL, TodoSortBy.CREATED_AT, Sort.Direction.ASC)).willReturn(List.of(response));
 
         // when
         // then
         mockMvc.perform(get("/todos"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1));
-        then(todoService).should().findAllTodos();
+        then(todoService).should().findAllTodos(TodoFilter.ALL, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
+    }
+
+    @Test
+    void givenStatusCompleted_whenGetAllTodos_thenPassesCompletedFilterToServiceTest() throws Exception {
+        // given
+        given(todoService.findAllTodos(TodoFilter.COMPLETED, TodoSortBy.CREATED_AT, Sort.Direction.ASC)).willReturn(List.of());
+
+        // when
+        // then
+        mockMvc.perform(get("/todos").param("status", "COMPLETED")).andExpect(status().isOk());
+        then(todoService).should().findAllTodos(TodoFilter.COMPLETED, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
+    }
+
+    @Test
+    void givenStatusIncomplete_whenGetAllTodos_thenPassesIncompleteFilterToServiceTest() throws Exception {
+        // given
+        given(todoService.findAllTodos(TodoFilter.INCOMPLETE, TodoSortBy.CREATED_AT, Sort.Direction.ASC)).willReturn(List.of());
+
+        // when
+        // then
+        mockMvc.perform(get("/todos").param("status", "INCOMPLETE")).andExpect(status().isOk());
+        then(todoService).should().findAllTodos(TodoFilter.INCOMPLETE, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
+    }
+
+    @Test
+    void givenStatusOverdue_whenGetAllTodos_thenPassesOverdueFilterToServiceTest() throws Exception {
+        // given
+        given(todoService.findAllTodos(TodoFilter.OVERDUE, TodoSortBy.CREATED_AT, Sort.Direction.ASC)).willReturn(List.of());
+
+        // when
+        // then
+        mockMvc.perform(get("/todos").param("status", "OVERDUE")).andExpect(status().isOk());
+        then(todoService).should().findAllTodos(TodoFilter.OVERDUE, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
+    }
+
+    @Test
+    void givenLowercaseStatusValue_whenGetAllTodos_thenBindsCaseInsensitivelyTest() throws Exception {
+        // given
+        given(todoService.findAllTodos(TodoFilter.COMPLETED, TodoSortBy.CREATED_AT, Sort.Direction.ASC)).willReturn(List.of());
+
+        // when
+        // then
+        mockMvc.perform(get("/todos").param("status", "completed")).andExpect(status().isOk());
+        then(todoService).should().findAllTodos(TodoFilter.COMPLETED, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
+    }
+
+    @Test
+    void givenInvalidStatusValue_whenGetAllTodos_thenReturns400Test() throws Exception {
+        // given
+        // (no stubbing needed; binding fails before the service is invoked)
+
+        // when
+        // then
+        mockMvc.perform(get("/todos").param("status", "bogus")).andExpect(status().isBadRequest());
+        then(todoService).should(never()).findAllTodos(any(), any(), any());
+    }
+
+    @Test
+    void givenSortByTitleAndDirectionDesc_whenGetAllTodos_thenPassesSortParamsToServiceTest() throws Exception {
+        // given
+        given(todoService.findAllTodos(TodoFilter.ALL, TodoSortBy.TITLE, Sort.Direction.DESC)).willReturn(List.of());
+
+        // when
+        // then
+        mockMvc.perform(get("/todos").param("sortBy", "TITLE").param("direction", "DESC")).andExpect(status().isOk());
+        then(todoService).should().findAllTodos(TodoFilter.ALL, TodoSortBy.TITLE, Sort.Direction.DESC);
+    }
+
+    @Test
+    void givenInvalidSortByValue_whenGetAllTodos_thenReturns400Test() throws Exception {
+        // given
+        // (no stubbing needed; binding fails before the service is invoked)
+
+        // when
+        // then
+        mockMvc.perform(get("/todos").param("sortBy", "bogus")).andExpect(status().isBadRequest());
+        then(todoService).should(never()).findAllTodos(any(), any(), any());
     }
 
     @Test

@@ -3,12 +3,15 @@ package com.focisolutions.takehomeexercise.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
+import com.focisolutions.takehomeexercise.dto.TodoFilter;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.dto.TodoSortBy;
 import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
 import com.focisolutions.takehomeexercise.entity.Todo;
 import com.focisolutions.takehomeexercise.exception.TodoNotFoundException;
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 class TodoServiceImplTest {
@@ -86,19 +90,72 @@ class TodoServiceImplTest {
     }
 
     @Test
-    void givenTodosExist_whenFindAllTodos_thenReturnsMappedListTest() {
+    void givenFilterAll_whenFindAllTodos_thenDelegatesToRepositoryFindAllWithSortTest() {
         // given
         final Todo todo = Todo.builder().title("Buy milk").build();
         final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
-        given(todoRepository.findAll()).willReturn(List.of(todo));
+        final Sort expectedSort = Sort.by(Sort.Direction.ASC, "createdAt");
+        given(todoRepository.findAll(expectedSort)).willReturn(List.of(todo));
         given(todoMapper.toResponse(todo)).willReturn(response);
 
         // when
-        final List<TodoResponse> result = todoServiceImpl.findAllTodos();
+        final List<TodoResponse> result = todoServiceImpl.findAllTodos(TodoFilter.ALL, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
 
         // then
         assertThat(result).containsExactly(response);
-        then(todoRepository).should().findAll();
+        then(todoRepository).should().findAll(expectedSort);
+    }
+
+    @Test
+    void givenFilterCompleted_whenFindAllTodos_thenDelegatesToRepositoryFindByCompletedTrueTest() {
+        // given
+        final Todo todo = Todo.builder().title("Buy milk").build();
+        final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(true).createdAt(Instant.now()).build();
+        final Sort expectedSort = Sort.by(Sort.Direction.DESC, "title");
+        given(todoRepository.findByCompleted(true, expectedSort)).willReturn(List.of(todo));
+        given(todoMapper.toResponse(todo)).willReturn(response);
+
+        // when
+        final List<TodoResponse> result = todoServiceImpl.findAllTodos(TodoFilter.COMPLETED, TodoSortBy.TITLE, Sort.Direction.DESC);
+
+        // then
+        assertThat(result).containsExactly(response);
+        then(todoRepository).should().findByCompleted(true, expectedSort);
+    }
+
+    @Test
+    void givenFilterIncomplete_whenFindAllTodos_thenDelegatesToRepositoryFindByCompletedFalseTest() {
+        // given
+        final Todo todo = Todo.builder().title("Buy milk").build();
+        final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
+        final Sort expectedSort = Sort.by(Sort.Direction.ASC, "dueDate");
+        given(todoRepository.findByCompleted(false, expectedSort)).willReturn(List.of(todo));
+        given(todoMapper.toResponse(todo)).willReturn(response);
+
+        // when
+        final List<TodoResponse> result = todoServiceImpl.findAllTodos(TodoFilter.INCOMPLETE, TodoSortBy.DUE_DATE, Sort.Direction.ASC);
+
+        // then
+        assertThat(result).containsExactly(response);
+        then(todoRepository).should().findByCompleted(false, expectedSort);
+    }
+
+    @Test
+    void givenFilterOverdue_whenFindAllTodos_thenDelegatesToRepositoryFindByCompletedFalseAndDueDateBeforeTodayTest() {
+        // given
+        final Todo todo = Todo.builder().title("Buy milk").build();
+        final TodoResponse response = TodoResponse.builder().id(1L).title("Buy milk").completed(false).createdAt(Instant.now()).build();
+        final Sort expectedSort = Sort.by(Sort.Direction.ASC, "createdAt");
+        given(todoRepository.findByCompletedFalseAndDueDateBefore(any(LocalDate.class), eq(expectedSort)))
+                .willReturn(List.of(todo));
+        given(todoMapper.toResponse(todo)).willReturn(response);
+
+        // when
+        final List<TodoResponse> result = todoServiceImpl.findAllTodos(TodoFilter.OVERDUE, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
+
+        // then
+        assertThat(result).containsExactly(response);
+        then(todoRepository).should().findByCompletedFalseAndDueDateBefore(any(LocalDate.class), eq(expectedSort));
     }
 
     @Test

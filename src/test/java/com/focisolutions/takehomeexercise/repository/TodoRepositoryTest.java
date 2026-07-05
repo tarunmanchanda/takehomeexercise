@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.data.domain.Sort;
 
 @DataJpaTest
 class TodoRepositoryTest {
@@ -64,5 +65,76 @@ class TodoRepositoryTest {
 
         // then
         assertThat(todos).isEmpty();
+    }
+
+    @Test
+    void givenTodosWithMixedCompletionStatus_whenFindByCompletedTrue_thenReturnsOnlyCompletedTodosTest() {
+        // given
+        final Todo completed = Todo.builder().title("Completed").build();
+        completed.markCompleted();
+        todoRepository.saveAndFlush(completed);
+        todoRepository.saveAndFlush(Todo.builder().title("Incomplete").build());
+
+        // when
+        final List<Todo> result = todoRepository.findByCompleted(true, Sort.unsorted());
+
+        // then
+        assertThat(result).extracting(Todo::getTitle).containsExactly("Completed");
+    }
+
+    @Test
+    void givenTodosWithMixedCompletionStatus_whenFindByCompletedFalse_thenReturnsOnlyIncompleteTodosTest() {
+        // given
+        final Todo completed = Todo.builder().title("Completed").build();
+        completed.markCompleted();
+        todoRepository.saveAndFlush(completed);
+        todoRepository.saveAndFlush(Todo.builder().title("Incomplete").build());
+
+        // when
+        final List<Todo> result = todoRepository.findByCompleted(false, Sort.unsorted());
+
+        // then
+        assertThat(result).extracting(Todo::getTitle).containsExactly("Incomplete");
+    }
+
+    @Test
+    void givenIncompleteTodoWithPastDueDate_whenFindByCompletedFalseAndDueDateBefore_thenReturnsOnlyThatTodoTest() {
+        // given
+        final LocalDate today = LocalDate.now();
+        todoRepository.saveAndFlush(Todo.builder().title("Overdue").dueDate(today.minusDays(1)).build());
+        todoRepository.saveAndFlush(Todo.builder().title("Future").dueDate(today.plusDays(1)).build());
+
+        // when
+        final List<Todo> result = todoRepository.findByCompletedFalseAndDueDateBefore(today, Sort.unsorted());
+
+        // then
+        assertThat(result).extracting(Todo::getTitle).containsExactly("Overdue");
+    }
+
+    @Test
+    void givenCompletedTodoWithPastDueDate_whenFindByCompletedFalseAndDueDateBefore_thenExcludesItTest() {
+        // given
+        final LocalDate today = LocalDate.now();
+        final Todo completedOverdue = Todo.builder().title("Completed overdue").dueDate(today.minusDays(1)).build();
+        completedOverdue.markCompleted();
+        todoRepository.saveAndFlush(completedOverdue);
+
+        // when
+        final List<Todo> result = todoRepository.findByCompletedFalseAndDueDateBefore(today, Sort.unsorted());
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void givenTodoWithNullDueDate_whenFindByCompletedFalseAndDueDateBefore_thenExcludesItTest() {
+        // given
+        todoRepository.saveAndFlush(Todo.builder().title("No due date").build());
+
+        // when
+        final List<Todo> result = todoRepository.findByCompletedFalseAndDueDateBefore(LocalDate.now(), Sort.unsorted());
+
+        // then
+        assertThat(result).isEmpty();
     }
 }
