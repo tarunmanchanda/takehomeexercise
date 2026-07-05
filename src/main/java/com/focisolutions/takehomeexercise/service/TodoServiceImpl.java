@@ -1,0 +1,45 @@
+package com.focisolutions.takehomeexercise.service;
+
+import com.focisolutions.takehomeexercise.dto.TodoCreateRequest;
+import com.focisolutions.takehomeexercise.dto.TodoResponse;
+import com.focisolutions.takehomeexercise.entity.Todo;
+import com.focisolutions.takehomeexercise.exception.TodoNotFoundException;
+import com.focisolutions.takehomeexercise.mapper.TodoMapper;
+import com.focisolutions.takehomeexercise.repository.TodoRepository;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+class TodoServiceImpl implements TodoService {
+
+    private static final Logger log = LoggerFactory.getLogger(TodoServiceImpl.class);
+
+    private final TodoRepository todoRepository;
+    private final TodoMapper todoMapper;
+
+    @Override
+    public TodoResponse createTodo(final TodoCreateRequest request) {
+        final Todo todo = new Todo(request.title(), request.description(), request.dueDate());
+        final Todo saved = todoRepository.save(todo);
+        log.info("Created todo {}", saved.getId());
+        return todoMapper.toResponse(saved);
+    }
+
+    @Override
+    public TodoResponse findTodoById(final Long id) {
+        return todoMapper.toResponse(getTodoOrThrow(id));
+    }
+
+    @Override
+    public List<TodoResponse> findAllTodos() {
+        return todoRepository.findAll().stream().map(todoMapper::toResponse).toList();
+    }
+
+    private Todo getTodoOrThrow(final Long id) {
+        return todoRepository.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
+    }
+}
