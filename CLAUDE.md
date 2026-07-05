@@ -31,6 +31,10 @@ This project pins `spring-boot-starter-parent` to `4.1.0`, which restructured st
 - `@WebMvcTest` lives in `org.springframework.boot.webmvc.test.autoconfigure`, not `org.springframework.boot.test.autoconfigure.web.servlet`.
 - IDE dependency-resolution warnings for `4.1.0` artifacts can be stale/wrong — confirm with `./mvnw dependency:tree` before trusting them.
 
+## Testing
+
+Test naming/structure (`given_when_then` method names + comments), BDDMockito, and AssertJ conventions are enforced by `.claude/skills/testing-conventions/SKILL.md` — read that when writing or reviewing any test in this repo. REST-specific standards, including the Richardson Maturity Model target, live in `.claude/skills/rest-api-standards/SKILL.md`.
+
 ## Java coding standards
 
 Mirrored from `~/.claude/CLAUDE.md` (global) — update both if these change.

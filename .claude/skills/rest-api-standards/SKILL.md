@@ -29,6 +29,15 @@ Apply every rule below to any Java code touched in this repo. Do not ask which t
 12. Controller → Service → Repository, strictly. Controllers never contain business logic. Services never depend on `HttpServletRequest`/`ResponseEntity`.
 13. DTOs at the boundary, entities never leave the service layer — controllers accept/return DTOs only, mapping via MapStruct or explicit mapper methods.
 
+## Richardson Maturity Model (RMM) compliance
+
+- **Level 0** — a single URI, single HTTP verb (usually POST), the "swamp of POX." Not acceptable here.
+- **Level 1** — multiple resource-based URIs, but still one verb per action, ignoring HTTP semantics. Not acceptable here.
+- **Level 2** — distinct resource URIs, correct HTTP verbs (`GET`/`POST`/`PUT`/`PATCH`/`DELETE`) used per their semantics, correct HTTP status codes per outcome (`200`/`201`/`204`/`400`/`404`, etc.).
+- **Level 3** — everything in Level 2, plus hypermedia controls (HATEOAS): responses embed links describing valid next actions/transitions from the current resource state.
+
+21. **This API targets Level 2.** Every endpoint must use a resource-oriented noun URI (`/todos`, `/todos/{id}`), the HTTP verb matching its semantics, and the correct status code for every outcome (see the endpoint table in `FEATURE.md`). Level 3/HATEOAS is a deliberate, documented extension point — not implemented, given the scope of this exercise — not an oversight. If extended later, use Spring HATEOAS (`spring-boot-starter-hateoas`, confirmed compatible with this project's Spring Boot version) via `EntityModel`/`CollectionModel` + `RepresentationModelAssembler`, and attach only links for currently-valid transitions (e.g. a completed resource should expose an "incomplete" link, not "complete").
+
 ## Validation & errors
 
 14. Bean validation (`@NotNull`, `@Size`, `@Valid`) on all incoming DTOs at the controller boundary — never manual null-checks for input validation.
