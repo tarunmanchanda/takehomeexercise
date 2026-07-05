@@ -10,6 +10,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -43,5 +44,15 @@ public class TodoController {
     @PutMapping("/{id}")
     public TodoResponse update(@PathVariable final Long id, @Valid @RequestBody final TodoUpdateRequest request) {
         return todoService.updateTodo(id, request);
+    }
+
+    @PatchMapping("/{id}/complete")
+    public TodoResponse markComplete(@PathVariable final Long id) {
+        return todoService.markCompleted(id);
+    }
+
+    @PatchMapping("/{id}/incomplete")
+    public TodoResponse markIncomplete(@PathVariable final Long id) {
+        return todoService.markIncomplete(id);
     }
 }

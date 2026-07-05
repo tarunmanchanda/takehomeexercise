@@ -43,4 +43,22 @@ public interface TodoService {
      * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
      */
     TodoResponse updateTodo(Long id, TodoUpdateRequest request);
+
+    /**
+     * Marks a Todo as completed. Idempotent — completing an already-complete Todo is not an error.
+     *
+     * @param id the Todo id
+     * @return the updated Todo
+     * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
+     */
+    TodoResponse markCompleted(Long id);
+
+    /**
+     * Marks a Todo as not completed. Idempotent — marking an already-incomplete Todo is not an error.
+     *
+     * @param id the Todo id
+     * @return the updated Todo
+     * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
+     */
+    TodoResponse markIncomplete(Long id);
 }

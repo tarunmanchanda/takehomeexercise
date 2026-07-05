@@ -49,6 +49,24 @@ class TodoServiceImpl implements TodoService {
         return todoMapper.toResponse(saved);
     }
 
+    @Override
+    public TodoResponse markCompleted(final Long id) {
+        final Todo todo = getTodoOrThrow(id);
+        todo.markCompleted();
+        final Todo saved = todoRepository.save(todo);
+        log.info("Marked todo {} as completed", id);
+        return todoMapper.toResponse(saved);
+    }
+
+    @Override
+    public TodoResponse markIncomplete(final Long id) {
+        final Todo todo = getTodoOrThrow(id);
+        todo.markIncomplete();
+        final Todo saved = todoRepository.save(todo);
+        log.info("Marked todo {} as incomplete", id);
+        return todoMapper.toResponse(saved);
+    }
+
     private Todo getTodoOrThrow(final Long id) {
         return todoRepository.findById(id).orElseThrow(() -> new TodoNotFoundException(id));
     }

@@ -130,4 +130,104 @@ class TodoServiceImplTest {
         assertThatThrownBy(() -> todoServiceImpl.updateTodo(id, request)).isInstanceOf(TodoNotFoundException.class);
         then(todoRepository).should(never()).save(any(Todo.class));
     }
+
+    @Test
+    void givenIncompleteTodo_whenMarkTodoCompleted_thenSetsCompletedTrueTest() {
+        // given
+        final Long id = 1L;
+        final Todo todo = new Todo("Buy milk", null, null);
+        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, true, Instant.now());
+        given(todoRepository.findById(id)).willReturn(Optional.of(todo));
+        given(todoRepository.save(todo)).willReturn(todo);
+        given(todoMapper.toResponse(todo)).willReturn(response);
+
+        // when
+        final TodoResponse result = todoServiceImpl.markCompleted(id);
+
+        // then
+        assertThat(result.completed()).isTrue();
+        assertThat(todo.isCompleted()).isTrue();
+        then(todoRepository).should().save(todo);
+    }
+
+    @Test
+    void givenAlreadyCompletedTodo_whenMarkTodoCompleted_thenRemainsCompletedTest() {
+        // given
+        final Long id = 1L;
+        final Todo todo = new Todo("Buy milk", null, null);
+        todo.markCompleted();
+        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, true, Instant.now());
+        given(todoRepository.findById(id)).willReturn(Optional.of(todo));
+        given(todoRepository.save(todo)).willReturn(todo);
+        given(todoMapper.toResponse(todo)).willReturn(response);
+
+        // when
+        final TodoResponse result = todoServiceImpl.markCompleted(id);
+
+        // then
+        assertThat(result.completed()).isTrue();
+        then(todoRepository).should().save(todo);
+    }
+
+    @Test
+    void givenNonExistingId_whenMarkTodoCompleted_thenThrowsTodoNotFoundExceptionTest() {
+        // given
+        final Long id = 404L;
+        given(todoRepository.findById(id)).willReturn(Optional.empty());
+
+        // when
+        // then
+        assertThatThrownBy(() -> todoServiceImpl.markCompleted(id)).isInstanceOf(TodoNotFoundException.class);
+        then(todoRepository).should(never()).save(any(Todo.class));
+    }
+
+    @Test
+    void givenCompletedTodo_whenMarkTodoIncomplete_thenSetsCompletedFalseTest() {
+        // given
+        final Long id = 1L;
+        final Todo todo = new Todo("Buy milk", null, null);
+        todo.markCompleted();
+        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, false, Instant.now());
+        given(todoRepository.findById(id)).willReturn(Optional.of(todo));
+        given(todoRepository.save(todo)).willReturn(todo);
+        given(todoMapper.toResponse(todo)).willReturn(response);
+
+        // when
+        final TodoResponse result = todoServiceImpl.markIncomplete(id);
+
+        // then
+        assertThat(result.completed()).isFalse();
+        assertThat(todo.isCompleted()).isFalse();
+        then(todoRepository).should().save(todo);
+    }
+
+    @Test
+    void givenAlreadyIncompleteTodo_whenMarkTodoIncomplete_thenRemainsIncompleteTest() {
+        // given
+        final Long id = 1L;
+        final Todo todo = new Todo("Buy milk", null, null);
+        final TodoResponse response = new TodoResponse(id, "Buy milk", null, null, false, Instant.now());
+        given(todoRepository.findById(id)).willReturn(Optional.of(todo));
+        given(todoRepository.save(todo)).willReturn(todo);
+        given(todoMapper.toResponse(todo)).willReturn(response);
+
+        // when
+        final TodoResponse result = todoServiceImpl.markIncomplete(id);
+
+        // then
+        assertThat(result.completed()).isFalse();
+        then(todoRepository).should().save(todo);
+    }
+
+    @Test
+    void givenNonExistingId_whenMarkTodoIncomplete_thenThrowsTodoNotFoundExceptionTest() {
+        // given
+        final Long id = 404L;
+        given(todoRepository.findById(id)).willReturn(Optional.empty());
+
+        // when
+        // then
+        assertThatThrownBy(() -> todoServiceImpl.markIncomplete(id)).isInstanceOf(TodoNotFoundException.class);
+        then(todoRepository).should(never()).save(any(Todo.class));
+    }
 }

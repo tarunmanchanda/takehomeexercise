@@ -6,6 +6,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -155,5 +156,53 @@ class TodoControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
         then(todoService).should(never()).updateTodo(any(), any());
+    }
+
+    @Test
+    void givenIncompleteTodoId_whenPatchComplete_thenReturns200WithCompletedTrueTest() throws Exception {
+        // given
+        final TodoResponse response = new TodoResponse(1L, "Buy milk", null, null, true, Instant.now());
+        given(todoService.markCompleted(1L)).willReturn(response);
+
+        // when
+        // then
+        mockMvc.perform(patch("/todos/1/complete"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completed").value(true));
+        then(todoService).should().markCompleted(1L);
+    }
+
+    @Test
+    void givenNonExistingId_whenPatchComplete_thenReturns404Test() throws Exception {
+        // given
+        given(todoService.markCompleted(404L)).willThrow(new TodoNotFoundException(404L));
+
+        // when
+        // then
+        mockMvc.perform(patch("/todos/404/complete")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void givenCompletedTodoId_whenPatchIncomplete_thenReturns200WithCompletedFalseTest() throws Exception {
+        // given
+        final TodoResponse response = new TodoResponse(1L, "Buy milk", null, null, false, Instant.now());
+        given(todoService.markIncomplete(1L)).willReturn(response);
+
+        // when
+        // then
+        mockMvc.perform(patch("/todos/1/incomplete"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.completed").value(false));
+        then(todoService).should().markIncomplete(1L);
+    }
+
+    @Test
+    void givenNonExistingId_whenPatchIncomplete_thenReturns404Test() throws Exception {
+        // given
+        given(todoService.markIncomplete(404L)).willThrow(new TodoNotFoundException(404L));
+
+        // when
+        // then
+        mockMvc.perform(patch("/todos/404/incomplete")).andExpect(status().isNotFound());
     }
 }
