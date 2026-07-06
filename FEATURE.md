@@ -23,6 +23,7 @@ A RESTful JSON API for managing personal to-do items: create, list, view, update
 - **Validation**: enforced via Bean Validation (`@Valid`/`@NotBlank`) on request DTOs at the controller boundary, plus `@Size` limits on free-text fields (`title` max 200 chars, `description` max 2000 chars), `@Positive` on numeric path identifiers (`id`), and friendly `400` responses (not a generic error page) for malformed query parameters such as an unrecognized filter/sort value.
 - **Error handling**: centralized via `@ControllerAdvice` — controllers never contain try/catch for business errors.
 - **Deployment**: the application is packaged as a Docker image via a multi-stage `Dockerfile` (`eclipse-temurin:17-jdk` build stage, `eclipse-temurin:17-jre` runtime stage, non-root user). The `data/` directory (holding the H2 database file) should be mounted as a volume — e.g. `docker run -p 8080:8080 -v $(pwd)/data:/app/data <image>` — so persistence survives container restarts, consistent with the Persistence requirement above.
+- **API documentation**: every endpoint is documented with OpenAPI annotations (`@Operation`, `@ApiResponse`, `@Parameter`) and every request/response DTO with `@Schema` (descriptions and examples). The raw spec is served at `/v3/api-docs` and an interactive Swagger UI at `/swagger-ui/index.html`, so the API is self-documenting and testable without external tooling.
 
 ## Capabilities
 
