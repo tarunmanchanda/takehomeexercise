@@ -110,6 +110,15 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<!-- Incremental compilation can pass only changed files to javac,
+					     leaving Lombok/MapStruct's annotation-processing round without
+					     a consistent full view of source (e.g. MapStruct silently
+					     generating null-only mappings because Todo.java wasn't
+					     recompiled alongside TodoMapper.java in the same round).
+					     Forcing a full recompile every time avoids that class of bug. -->
+					<useIncrementalCompilation>false</useIncrementalCompilation>
+				</configuration>
 				<executions>
 					<execution>
 						<id>default-compile</id>
