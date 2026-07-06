@@ -17,12 +17,17 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:lifecycletestdb;DB_CLOSE_DELAY=-1")
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:lifecycletestdb;DB_CLOSE_DELAY=-1",
+        "spring.security.user.name=" + BasicAuthHeader.USERNAME,
+        "spring.security.user.password=" + BasicAuthHeader.PASSWORD
+})
 class TodoLifecycleIntegrationTest {
 
     @Autowired
@@ -38,7 +43,7 @@ class TodoLifecycleIntegrationTest {
                 {"title":"Buy milk","description":"2 litres","dueDate":"2026-07-10"}""";
 
         // when: create
-        final MvcResult createResult = mockMvc.perform(post("/todos")
+        final MvcResult createResult = mockMvc.perform(authorized(post("/todos"))
                         .contentType("application/json")
                         .content(createBody))
                 .andExpect(status().isCreated())
@@ -50,7 +55,7 @@ class TodoLifecycleIntegrationTest {
         assertThat(originalUpdatedAt).isEqualTo(Instant.parse(created.get("createdAt").asString()));
 
         // then: get returns the created todo
-        mockMvc.perform(get(location))
+        mockMvc.perform(authorized(get(location)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Buy milk"))
                 .andExpect(jsonPath("$.completed").value(false));
@@ -58,7 +63,7 @@ class TodoLifecycleIntegrationTest {
         // when: update
         final String updateBody = """
                 {"title":"Buy oat milk","description":"2 litres","dueDate":"2026-07-11"}""";
-        final MvcResult updateResult = mockMvc.perform(put(location)
+        final MvcResult updateResult = mockMvc.perform(authorized(put(location))
                         .contentType("application/json")
                         .content(updateBody))
                 .andExpect(status().isOk())
@@ -70,19 +75,23 @@ class TodoLifecycleIntegrationTest {
         assertThat(Instant.parse(updated.get("updatedAt").asString())).isAfter(originalUpdatedAt);
 
         // when: complete
-        mockMvc.perform(patch(location + "/complete"))
+        mockMvc.perform(authorized(patch(location + "/complete")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.completed").value(true));
 
         // when: incomplete
-        mockMvc.perform(patch(location + "/incomplete"))
+        mockMvc.perform(authorized(patch(location + "/incomplete")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.completed").value(false));
 
         // when: delete
-        mockMvc.perform(delete(location)).andExpect(status().isNoContent());
+        mockMvc.perform(authorized(delete(location))).andExpect(status().isNoContent());
 
         // then: subsequent get returns 404
-        mockMvc.perform(get(location)).andExpect(status().isNotFound());
+        mockMvc.perform(authorized(get(location))).andExpect(status().isNotFound());
+    }
+
+    private MockHttpServletRequestBuilder authorized(final MockHttpServletRequestBuilder builder) {
+        return builder.header("Authorization", BasicAuthHeader.VALUE);
     }
 }

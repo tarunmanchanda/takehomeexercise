@@ -13,10 +13,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = "spring.datasource.url=jdbc:h2:mem:filterandsorttestdb;DB_CLOSE_DELAY=-1")
+@TestPropertySource(properties = {
+        "spring.datasource.url=jdbc:h2:mem:filterandsorttestdb;DB_CLOSE_DELAY=-1",
+        "spring.security.user.name=" + BasicAuthHeader.USERNAME,
+        "spring.security.user.password=" + BasicAuthHeader.PASSWORD
+})
 class TodoFilterAndSortIntegrationTest {
 
     @Autowired
@@ -26,42 +31,46 @@ class TodoFilterAndSortIntegrationTest {
     void givenTodosWithVariedStateAndDueDates_whenFilteringAndSorting_thenResultsMatchEachCriteriaTest() throws Exception {
         // given
         final String overdueDueDate = LocalDate.now().minusDays(1).toString();
-        mockMvc.perform(post("/todos").contentType("application/json")
+        mockMvc.perform(authorized(post("/todos")).contentType("application/json")
                 .content("{\"title\":\"Charlie\"}")).andExpect(status().isCreated());
-        final String alphaLocation = mockMvc.perform(post("/todos").contentType("application/json")
+        final String alphaLocation = mockMvc.perform(authorized(post("/todos")).contentType("application/json")
                         .content("{\"title\":\"Alpha\",\"dueDate\":\"" + overdueDueDate + "\"}"))
                 .andExpect(status().isCreated()).andReturn().getResponse().getHeader("Location");
-        final String bravoLocation = mockMvc.perform(post("/todos").contentType("application/json")
+        final String bravoLocation = mockMvc.perform(authorized(post("/todos")).contentType("application/json")
                         .content("{\"title\":\"Bravo\"}"))
                 .andExpect(status().isCreated()).andReturn().getResponse().getHeader("Location");
-        mockMvc.perform(patch(bravoLocation + "/complete")).andExpect(status().isOk());
+        mockMvc.perform(authorized(patch(bravoLocation + "/complete"))).andExpect(status().isOk());
 
         // when: filter by OVERDUE
         // then: only Alpha (incomplete, dueDate in the past)
-        mockMvc.perform(get("/todos").param("status", "OVERDUE"))
+        mockMvc.perform(authorized(get("/todos")).param("status", "OVERDUE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].title").value("Alpha"));
 
         // when: filter by COMPLETED
         // then: only Bravo
-        mockMvc.perform(get("/todos").param("status", "COMPLETED"))
+        mockMvc.perform(authorized(get("/todos")).param("status", "COMPLETED"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].title").value("Bravo"));
 
         // when: filter by INCOMPLETE
         // then: Alpha and Charlie, not Bravo
-        mockMvc.perform(get("/todos").param("status", "INCOMPLETE"))
+        mockMvc.perform(authorized(get("/todos")).param("status", "INCOMPLETE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
 
         // when: sort ALL by title ascending
         // then: Alpha, Bravo, Charlie in order
-        mockMvc.perform(get("/todos").param("sortBy", "TITLE").param("direction", "ASC"))
+        mockMvc.perform(authorized(get("/todos")).param("sortBy", "TITLE").param("direction", "ASC"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").value("Alpha"))
                 .andExpect(jsonPath("$[1].title").value("Bravo"))
                 .andExpect(jsonPath("$[2].title").value("Charlie"));
+    }
+
+    private MockHttpServletRequestBuilder authorized(final MockHttpServletRequestBuilder builder) {
+        return builder.header("Authorization", BasicAuthHeader.VALUE);
     }
 }

@@ -1,6 +1,10 @@
 spring:
   application:
     name: takehomeexercise
+  security:
+    user:
+      name: ${APP_SECURITY_USERNAME:admin}
+      password: ${APP_SECURITY_PASSWORD:changeme}
   datasource:
     url: jdbc:h2:file:./data/tododb
     driver-class-name: org.h2.Driver
