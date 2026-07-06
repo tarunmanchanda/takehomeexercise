@@ -121,7 +121,8 @@ Not implemented here, but worth naming explicitly to show where this would go ne
 - Schema migrations (Flyway/Liquibase) instead of `ddl-auto=update` — see [Trade-offs](#trade-offs).
 - Real secrets management for the Basic Auth credentials instead of a config-file default — see [Trade-offs](#trade-offs).
 - Testcontainers-based integration tests against a real target database (e.g. Postgres) — H2 doesn't perfectly emulate every production database's SQL dialect, so this would catch drift before it reaches production.
-- Further out: rate limiting/circuit breakers, structured logging with correlation IDs, richer observability (metrics, tracing), and multi-user support with per-user resource ownership (today's single shared Basic Auth user assumes one user, consistent with a personal to-do list).
+- Rate limiting on the API (e.g. Bucket4j, or Resilience4j's rate limiter) — protects the service itself from abuse/overload, independent of any downstream dependency's fragility.
+- Further out: structured logging with correlation IDs, richer observability (metrics, tracing), and multi-user support with per-user resource ownership (today's single shared Basic Auth user assumes one user, consistent with a personal to-do list).
 
 ## Assumptions
 
