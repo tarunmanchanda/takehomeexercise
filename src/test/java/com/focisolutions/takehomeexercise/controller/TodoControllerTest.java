@@ -77,7 +77,10 @@ class TodoControllerTest {
         mockMvc.perform(post("/todos")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.errors[0]").value("title must not be blank"))
+                .andExpect(jsonPath("$.instance").value("/todos"));
         then(todoService).should(never()).createTodo(any());
     }
 
@@ -117,7 +120,11 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos/404")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/todos/404"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("Todo not found with id 404"))
+                .andExpect(jsonPath("$.instance").value("/todos/404"));
         then(todoService).should().findTodoById(404L);
     }
 
@@ -197,7 +204,9 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").param("status", "bogus")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/todos").param("status", "bogus"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0]").value("status: invalid value 'bogus'"));
         then(todoService).should(never()).findAllTodos(any(), any(), any());
     }
 

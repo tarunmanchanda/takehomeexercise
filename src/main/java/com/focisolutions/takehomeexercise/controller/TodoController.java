@@ -5,7 +5,6 @@ import com.focisolutions.takehomeexercise.dto.TodoFilter;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
 import com.focisolutions.takehomeexercise.dto.TodoSortBy;
 import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
-import com.focisolutions.takehomeexercise.exception.ErrorResponse;
 import com.focisolutions.takehomeexercise.service.TodoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,6 +19,7 @@ import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -56,7 +56,7 @@ public class TodoController {
             @ApiResponse(responseCode = "201", description = "Todo created",
                     content = @Content(schema = @Schema(implementation = TodoResponse.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PostMapping
     public ResponseEntity<TodoResponse> create(@Valid @RequestBody final TodoCreateRequest request) {
@@ -76,7 +76,7 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Matching Todos returned"),
             @ApiResponse(responseCode = "400", description = "Invalid status, sortBy, or direction value",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @GetMapping
     public List<TodoResponse> getAll(
@@ -97,9 +97,9 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Todo found"),
             @ApiResponse(responseCode = "404", description = "No Todo with the given id",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "400", description = "id is not positive",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @GetMapping("/{id}")
     public TodoResponse getById(@Parameter(description = "Todo id") @PathVariable @Positive final Long id) {
@@ -118,9 +118,9 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Todo updated"),
             @ApiResponse(responseCode = "404", description = "No Todo with the given id",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed or id is not positive",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PutMapping("/{id}")
     public TodoResponse update(@Parameter(description = "Todo id") @PathVariable @Positive final Long id,
@@ -139,9 +139,9 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Todo marked completed"),
             @ApiResponse(responseCode = "404", description = "No Todo with the given id",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "400", description = "id is not positive",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PatchMapping("/{id}/complete")
     public TodoResponse markComplete(@Parameter(description = "Todo id") @PathVariable @Positive final Long id) {
@@ -159,9 +159,9 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Todo marked incomplete"),
             @ApiResponse(responseCode = "404", description = "No Todo with the given id",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "400", description = "id is not positive",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PatchMapping("/{id}/incomplete")
     public TodoResponse markIncomplete(@Parameter(description = "Todo id") @PathVariable @Positive final Long id) {
@@ -178,9 +178,9 @@ public class TodoController {
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Todo deleted"),
             @ApiResponse(responseCode = "404", description = "No Todo with the given id",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "400", description = "id is not positive",
-                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@Parameter(description = "Todo id") @PathVariable @Positive final Long id) {
