@@ -145,3 +145,11 @@ Not implemented here, but worth naming explicitly to show where this would go ne
 - File-based H2 instead of a production RDBMS (Postgres/MySQL). Fast to set up and satisfies the literal "must persist across restarts" requirement, but lacks real production characteristics — realistic concurrent-connection handling, connection pool tuning at scale, and so on. Swapping it out later is a config change, not a rewrite, thanks to the Spring Data JPA abstraction (see Design Choices above).
 - `ddl-auto: update` instead of a migration tool (Flyway/Liquibase). Fast for a take-home; in a real production codebase, schema changes should go through auditable, reversible migration scripts instead of Hibernate inferring and silently applying DDL.
 - Default Basic Auth credentials committed in `application.yaml`. Done deliberately for this demo so the interviewer can run the app with zero setup (see [Credentials](#credentials--read-this-before-testing-the-api) above) — but this is explicitly *not* how a production service should handle secrets. A real deployment should pull credentials from a secrets manager/vault or CI-injected environment variables with no committed fallback.
+
+## Development Process
+
+Built with Claude Code as an engineering aid, not an autopilot — every decision below was mine to make and verify.
+
+- Spec-first: [`FEATURE.md`](FEATURE.md)'s Given/When/Then acceptance criteria were written before implementation; every test traces back to one.
+- Standards-first: coding and REST API conventions were codified upfront in `CLAUDE.md` and two reusable Claude Code skills (`rest-api-standards`, `testing-conventions`), so every change met the same bar instead of varying ad hoc.
+- AI accelerated the mechanics — boilerplate, research into Spring Boot 4.1's breaking changes, test scaffolding — while the architecture, trade-offs, and verification (including every claim in this README) were directed and checked by me throughout.
