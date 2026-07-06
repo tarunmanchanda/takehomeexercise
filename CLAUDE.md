@@ -12,7 +12,10 @@ Build/run with the Maven wrapper (no local Maven install required):
 ./mvnw test -Dtest=TestControllerTest#ping_returnsOkWithUpMessage  # run a single test method
 ./mvnw -DskipTests package           # build the jar without running tests
 ./mvnw spring-boot:run               # run the app locally (port 8080)
+./mvnw clean verify                  # full build + tests + JaCoCo coverage gate (90% line minimum)
 ```
+
+Coverage report after `verify`: `target/site/jacoco/index.html`. The gate is bound to `verify`, not `test`, so a plain `./mvnw test` stays fast and always runs regardless of coverage.
 
 ## Architecture
 
