@@ -51,6 +51,10 @@ Apply every rule below to any Java code touched in this repo. Do not ask which t
 17. No wildcard imports (`import java.util.*` banned). No unused imports.
 18. Javadoc required on all public classes and public methods in service/API-facing layers — one-line summary minimum, `@param`/`@return`/`@throws` when non-obvious.
 
+## API documentation (OpenAPI/Swagger)
+
+22. Every controller endpoint must be documented with OpenAPI annotations: `@Tag` at the class level, `@Operation(summary = ...)` per method, and `@ApiResponse` for every status code the endpoint can actually return (mirror the outcomes already documented in `FEATURE.md`). Path variables and query params get `@Parameter(description = ...)`. Every request/response DTO (and enum used as a query param) gets `@Schema` with a `description`, plus `example` values on record components where a realistic example adds clarity. Swagger UI (`/swagger-ui/index.html`) and the raw OpenAPI spec (`/v3/api-docs`) must stay reachable so the API is self-documenting and testable without external tooling. These annotations are additive documentation on top of Bean Validation (`@NotBlank`, `@Size`, `@Positive`, etc.) — they don't replace it; springdoc automatically reflects Bean Validation constraints (required, `maxLength`, etc.) into the generated schema with no extra annotation needed for that part. A class that's package-private by default (rule 19) may be widened to `public` specifically to be referenced from `@Schema(implementation = ...)` across packages — that's a genuine cross-package use, not an exception to the rule.
+
 ## Configuration
 
 20. Configuration via `@ConfigurationProperties` with typed, immutable config classes (records) — never inject raw values with scattered `@Value("${...}")` across the codebase.

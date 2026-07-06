@@ -36,7 +36,11 @@ This project pins `spring-boot-starter-parent` to `4.1.0`, which restructured st
 
 ## Testing
 
-Test naming/structure (`given_when_then` method names + comments), BDDMockito, and AssertJ conventions are enforced by `.claude/skills/testing-conventions/SKILL.md` — read that when writing or reviewing any test in this repo. REST-specific standards, including the Richardson Maturity Model target, live in `.claude/skills/rest-api-standards/SKILL.md`.
+Test naming/structure (`given_when_then` method names + comments), BDDMockito, and AssertJ conventions are enforced by `.claude/skills/testing-conventions/SKILL.md` — read that when writing or reviewing any test in this repo. REST-specific standards, including the Richardson Maturity Model target and the OpenAPI/Swagger documentation requirement (every endpoint/DTO annotated, Swagger UI kept reachable), live in `.claude/skills/rest-api-standards/SKILL.md`.
+
+### springdoc-openapi + Jackson 3 (fragile, watch this)
+
+`springdoc-openapi-starter-webmvc-ui:3.0.3` (the version needed for Spring Boot 4.1/Framework 7) pulls `swagger-core-jakarta`, which depends on Jackson 2 (`com.fasterxml.jackson.databind`) — while this app runs Jackson 3 (`tools.jackson.*`) via Boot 4.1's own Jackson auto-config. This was verified working at the time it was added (full test suite green, live `/v3/api-docs` and `/swagger-ui/index.html` both correct, existing endpoints unaffected), but there are open, unresolved upstream issues (springdoc-openapi #3200/#3157, swagger-core #4991/#5031/#5225) describing real Jackson-2-vs-3 conflicts on this exact combination with no confirmed fix. If springdoc/Jackson-related errors appear after a dependency bump, this is the first place to look.
 
 ## Java coding standards
 
