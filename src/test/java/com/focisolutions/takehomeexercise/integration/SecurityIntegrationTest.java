@@ -29,7 +29,7 @@ class SecurityIntegrationTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/todos")).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -39,7 +39,7 @@ class SecurityIntegrationTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").header("Authorization", BasicAuthHeader.VALUE))
+        mockMvc.perform(get("/api/v1/todos").header("Authorization", BasicAuthHeader.VALUE))
                 .andExpect(status().isOk());
     }
 

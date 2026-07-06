@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
  * REST API for managing Todo items: create, list, view, update, mark complete/incomplete, and delete.
  */
 @RestController
-@RequestMapping("/todos")
+@RequestMapping("/api/v1/todos")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "Todos", description = "Manage personal to-do items")
@@ -61,7 +61,7 @@ public class TodoController {
     @PostMapping
     public ResponseEntity<TodoResponse> create(@Valid @RequestBody final TodoCreateRequest request) {
         final TodoResponse created = todoService.createTodo(request);
-        return ResponseEntity.created(URI.create("/todos/" + created.id())).body(created);
+        return ResponseEntity.created(URI.create("/api/v1/todos/" + created.id())).body(created);
     }
 
     /**
@@ -113,6 +113,7 @@ public class TodoController {
      * @param request the validated update request
      * @return the updated Todo
      * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
+     * @throws org.springframework.orm.ObjectOptimisticLockingFailureException if the Todo was concurrently modified
      */
     @Operation(summary = "Update a Todo's title, description, and due date")
     @ApiResponses({
@@ -120,6 +121,8 @@ public class TodoController {
             @ApiResponse(responseCode = "404", description = "No Todo with the given id",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed or id is not positive",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "409", description = "The Todo was modified by another request in the meantime (optimistic locking conflict)",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PutMapping("/{id}")
@@ -134,6 +137,7 @@ public class TodoController {
      * @param id the Todo id, must be positive
      * @return the updated Todo
      * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
+     * @throws org.springframework.orm.ObjectOptimisticLockingFailureException if the Todo was concurrently modified
      */
     @Operation(summary = "Mark a Todo as completed", description = "Idempotent -- completing an already-complete Todo is not an error.")
     @ApiResponses({
@@ -141,6 +145,8 @@ public class TodoController {
             @ApiResponse(responseCode = "404", description = "No Todo with the given id",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "400", description = "id is not positive",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "409", description = "The Todo was modified by another request in the meantime (optimistic locking conflict)",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PatchMapping("/{id}/complete")
@@ -154,6 +160,7 @@ public class TodoController {
      * @param id the Todo id, must be positive
      * @return the updated Todo
      * @throws com.focisolutions.takehomeexercise.exception.TodoNotFoundException if no Todo exists with the given id
+     * @throws org.springframework.orm.ObjectOptimisticLockingFailureException if the Todo was concurrently modified
      */
     @Operation(summary = "Mark a Todo as not completed", description = "Idempotent -- marking an already-incomplete Todo is not an error.")
     @ApiResponses({
@@ -161,6 +168,8 @@ public class TodoController {
             @ApiResponse(responseCode = "404", description = "No Todo with the given id",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "400", description = "id is not positive",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "409", description = "The Todo was modified by another request in the meantime (optimistic locking conflict)",
                     content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
     })
     @PatchMapping("/{id}/incomplete")

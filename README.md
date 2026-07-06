@@ -44,7 +44,7 @@ The `-v $(pwd)/data:/app/data` volume mount persists the H2 database file across
 
 ### Credentials — read this before testing the API
 
-Every `/todos/**` endpoint requires **HTTP Basic authentication**. Default credentials, baked in for this demo:
+Every `/api/v1/todos/**` endpoint requires **HTTP Basic authentication**. Default credentials, baked in for this demo:
 
 ```
 username: admin
@@ -66,7 +66,7 @@ Swagger UI is the recommended way to explore and exercise the API, and needs no 
 
 The raw OpenAPI spec is also available at http://localhost:8080/v3/api-docs (also public, no login needed).
 
-If you'd rather use Postman or curl: set Basic Auth with the credentials above (e.g. `curl -u admin:changeme http://localhost:8080/todos`).
+If you'd rather use Postman or curl: set Basic Auth with the credentials above (e.g. `curl -u admin:changeme http://localhost:8080/api/v1/todos`).
 
 ## Running Tests
 
@@ -92,9 +92,11 @@ From an IDE: right-click a test class or method and Run/Debug as usual (again, p
 - **`ProblemDetail` (RFC 9457) for all error responses, not a hand-rolled error DTO.** It's a Spring/industry standard shape (`type`/`title`/`status`/`detail`/`instance`), needs no bespoke documentation for API consumers who already know the RFC, and integrates natively with `ResponseEntityExceptionHandler` for framework-thrown exceptions — extended with an `errors` property for field-level validation detail without breaking the standard shape.
 - **Enum-based, whitelisted filtering/sorting** (`status`, `sortBy`, `direction` query params) rather than exposing Spring's raw `Sort` binding. Whitelisting means a bad value gets a clean `400` (not a leaked field name or a `500`), and it self-documents as a dropdown in Swagger instead of a free-text string.
 - **OpenAPI/Swagger on every endpoint and DTO.** Makes the API self-testable without external tooling (Postman collections, hand-written docs) — see [Testing the API](#testing-the-api--use-swagger-ui) above.
-- **HTTP Basic authentication, applied uniformly to all `/todos/**` endpoints.** Simplest correct mechanism for a single-user personal to-do list — no session/cookie state, so CSRF protection is correctly disabled (there's no CSRF attack surface without a session to forge). Swagger, the raw OpenAPI spec, and `/actuator/health` stay public deliberately, so the API remains self-documenting and health-checkable without credentials.
+- **HTTP Basic authentication, applied uniformly to all `/api/v1/todos/**` endpoints.** Simplest correct mechanism for a single-user personal to-do list — no session/cookie state, so CSRF protection is correctly disabled (there's no CSRF attack surface without a session to forge). Swagger, the raw OpenAPI spec, and `/actuator/health` stay public deliberately, so the API remains self-documenting and health-checkable without credentials.
 - **A local JaCoCo coverage gate**, bound to `./mvnw verify` (not `test`, so day-to-day `test` runs stay fast), enforcing a minimum set just below the measured real baseline rather than an arbitrary target — it protects against *regression*, not an aspirational number picked out of thin air.
 - **Feature-spec-first development.** [`FEATURE.md`](FEATURE.md) was written before implementation, with Given/When/Then acceptance criteria; every test method traces back to a specific criterion. This keeps the spec and the test suite from drifting apart and gives durable documentation of intended behavior independent of the code.
+- **API versioning via a URI path prefix (`/api/v1/todos`)**, not a bare `/todos`. Spring Framework 7 has newer native versioning support (header/query/media-type resolvers via a `version` attribute on `@RequestMapping`), but it's recently introduced and adds moving parts; a path prefix needs no extra dependency, is trivial to test, and is the convention most API consumers already expect. A future breaking change ships as `/api/v2/todos` alongside the existing route rather than breaking current clients.
+- **Optimistic locking via a JPA `@Version` column on `Todo`.** Because each request loads its own fresh copy of the entity and saves within its own transaction, two concurrent edits to the same Todo are only safe if the second save is rejected rather than silently overwriting the first. The version check happens automatically at the database level (`UPDATE ... WHERE id=? AND version=?`); a conflict throws `ObjectOptimisticLockingFailureException`, mapped to `409 Conflict`. `version` is exposed in `TodoResponse` for transparency, though clients don't need to send it back for the protection to work.
 - **Docker multi-stage build** (JDK for building, JRE-only for running), non-root container user, and a volume-mounted data directory — smaller final image, standard container security practice, and persistence survives container restarts.
 
 ### Testing strategy
@@ -108,14 +110,13 @@ From an IDE: right-click a test class or method and Run/Debug as usual (again, p
 - **BDD naming and structure**: every test method is named `given<Precondition>_when<Action>_then<Outcome>Test()`, with explicit `// given` / `// when` / `// then` comments in the body. Intent is readable from the method name alone, and each name traces back to a specific acceptance criterion in `FEATURE.md`.
 - **BDDMockito + AssertJ** over vanilla Mockito/JUnit assertions — BDDMockito's `given()`/`then().should()` vocabulary matches the given/when/then test structure, and AssertJ's fluent assertions (`.extracting()`, `.containsExactly()`, etc.) give clearer failure output.
 - **Edge cases and error paths are tested explicitly, not just happy paths** — idempotent complete/incomplete transitions, non-positive `id` validation on every endpoint that takes one, the overdue-excludes-completed-and-null-dueDate business rule, and (for the newly added security layer) both the unauthenticated-401 and authenticated-200 cases plus proof that Swagger/health remain public.
+- **Concurrency behavior is tested, not just assumed from the `@Version` annotation being present.** A repository-level test uses `TestEntityManager` to force two genuinely independent, non-cached loads of the same row (mirroring two concurrent requests), then asserts the second save actually throws `ObjectOptimisticLockingFailureException` rather than silently overwriting the first.
 
 ### Potential future enhancements
 
 Not implemented here, but worth naming explicitly to show where this would go next with more time:
 
-- **API versioning** (e.g. `/api/v1/todos`) — prevents breaking existing clients as the API evolves.
-- **Optimistic locking** (`@Version` on `Todo`) — protects against lost updates when two clients `PUT` the same todo concurrently.
-- **Pagination** on `GET /todos` — returning the full unpaginated list doesn't scale past a small number of todos.
+- **Pagination** on `GET /api/v1/todos` — returning the full unpaginated list doesn't scale past a small number of todos.
 - **CI pipeline** (e.g. GitHub Actions running `./mvnw clean verify` on every push/PR) — right now all verification is manual/local.
 - **Schema migrations** (Flyway/Liquibase) instead of `ddl-auto=update` — see [Trade-offs](#trade-offs).
 - **Real secrets management** for the Basic Auth credentials instead of a config-file default — see [Trade-offs](#trade-offs).
@@ -126,11 +127,12 @@ Not implemented here, but worth naming explicitly to show where this would go ne
 
 - `completed` is the field/JSON name for the assignment's "is completed" flag (not `isCompleted`) — idiomatic Java naming; a field literally named `isCompleted` produces confusing `isIsCompleted`-style accessors.
 - An `updatedAt` timestamp was added beyond what the assignment explicitly asked for, alongside `createdAt` — a small, deliberate addition to show a complete audit trail on each record.
-- Base path is `/todos` (not `/api/todos`), matching the assignment's own endpoint examples literally; this is unrelated to the pre-existing `/api/test/ping` liveness endpoint, which predates this feature.
-- `PUT /todos/{id}` is a full replacement of `title`/`description`/`dueDate` only — `completed`, `createdAt`, `updatedAt`, and `id` are server-controlled and not settable through this endpoint (completion has its own dedicated endpoints).
+- Base path is `/api/v1/todos` — the `/api/v1` prefix is for versioning (see Design Choices above); `/todos` itself matches the assignment's own endpoint examples literally. Unrelated to the pre-existing `/api/test/ping` liveness endpoint, which predates this feature and isn't part of the versioned Todo API.
+- `PUT /api/v1/todos/{id}` is a full replacement of `title`/`description`/`dueDate` only — `completed`, `createdAt`, `updatedAt`, and `id` are server-controlled and not settable through this endpoint (completion has its own dedicated endpoints).
 - "Overdue" is defined as `completed=false AND dueDate is set AND dueDate < today` — a completed item past its due date is *not* considered overdue. This specific definition isn't given in the assignment and was an assumption made and documented in `FEATURE.md`.
 - `PATCH .../complete` and `.../incomplete` are idempotent — calling either on a todo already in that state returns `200`, not an error.
 - `DELETE` returns `204 No Content` (not `200`), per RFC 7231 — there's no representation to return after deletion.
+- Optimistic locking conflicts are detected purely server-side (each request's own fresh load-then-save within one transaction) — clients are not required to submit a `version` back on `PUT`/`PATCH` for the protection to work, even though it's exposed in the response for transparency.
 - File-based (not in-memory) H2 was chosen specifically to satisfy "data persists across restarts" literally, since there was time to implement the persistent version.
 - No multi-user support — a single shared Basic Auth user is assumed sufficient, consistent with the assignment describing a single-user personal to-do list with no mention of multi-user/authorization requirements.
 - `title`/`description` length limits (200/2000 characters) are reasonable, arbitrary bounds — not specified by the assignment.

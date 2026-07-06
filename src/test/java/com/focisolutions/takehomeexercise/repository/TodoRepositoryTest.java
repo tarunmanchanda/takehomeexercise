@@ -1,6 +1,7 @@
 package com.focisolutions.takehomeexercise.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.focisolutions.takehomeexercise.entity.Todo;
 import java.time.Instant;
@@ -10,13 +11,18 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.data.domain.Sort;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 @DataJpaTest
 class TodoRepositoryTest {
 
     @Autowired
     private TodoRepository todoRepository;
+
+    @Autowired
+    private TestEntityManager testEntityManager;
 
     @Test
     void givenNewTodo_whenSaved_thenIdIsGeneratedAndCreatedAtIsPopulatedTest() {
@@ -165,5 +171,25 @@ class TodoRepositoryTest {
 
         // then
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void givenTwoConcurrentlyLoadedCopiesOfATodo_whenBothAreSaved_thenTheSecondSaveThrowsOptimisticLockingFailureTest() {
+        // given: two "requests" each load their own copy of the same row at version 0
+        final Todo persisted = testEntityManager.persistFlushFind(Todo.builder().title("Buy milk").build());
+        final Long id = persisted.getId();
+        testEntityManager.detach(persisted);
+        final Todo staleCopy = todoRepository.findById(id).orElseThrow();
+        testEntityManager.detach(staleCopy);
+        final Todo freshCopy = todoRepository.findById(id).orElseThrow();
+
+        // when: the first request saves successfully, bumping the row to version 1
+        freshCopy.updateDetails("Buy oat milk", null, null);
+        todoRepository.saveAndFlush(freshCopy);
+
+        // then: the second request's save, still holding version 0, is rejected rather than silently overwriting
+        staleCopy.updateDetails("Buy soy milk", null, null);
+        assertThatThrownBy(() -> todoRepository.saveAndFlush(staleCopy))
+                .isInstanceOf(ObjectOptimisticLockingFailureException.class);
     }
 }

@@ -20,6 +20,7 @@ import com.focisolutions.takehomeexercise.dto.TodoFilter;
 import com.focisolutions.takehomeexercise.dto.TodoResponse;
 import com.focisolutions.takehomeexercise.dto.TodoSortBy;
 import com.focisolutions.takehomeexercise.dto.TodoUpdateRequest;
+import com.focisolutions.takehomeexercise.entity.Todo;
 import com.focisolutions.takehomeexercise.exception.TodoNotFoundException;
 import com.focisolutions.takehomeexercise.service.TodoService;
 import java.time.Instant;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.Sort;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -57,11 +59,11 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(post("/todos")
+        mockMvc.perform(post("/api/v1/todos")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/todos/1"))
+                .andExpect(header().string("Location", "/api/v1/todos/1"))
                 .andExpect(jsonPath("$.title").value("Buy milk"))
                 .andExpect(jsonPath("$.completed").value(false));
         then(todoService).should().createTodo(request);
@@ -74,13 +76,13 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(post("/todos")
+        mockMvc.perform(post("/api/v1/todos")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.errors[0]").value("title must not be blank"))
-                .andExpect(jsonPath("$.instance").value("/todos"));
+                .andExpect(jsonPath("$.instance").value("/api/v1/todos"));
         then(todoService).should(never()).createTodo(any());
     }
 
@@ -91,7 +93,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(post("/todos")
+        mockMvc.perform(post("/api/v1/todos")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -106,7 +108,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos/1"))
+        mockMvc.perform(get("/api/v1/todos/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Buy milk"));
@@ -120,11 +122,11 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos/404"))
+        mockMvc.perform(get("/api/v1/todos/404"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.detail").value("Todo not found with id 404"))
-                .andExpect(jsonPath("$.instance").value("/todos/404"));
+                .andExpect(jsonPath("$.instance").value("/api/v1/todos/404"));
         then(todoService).should().findTodoById(404L);
     }
 
@@ -135,7 +137,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos/0")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/todos/0")).andExpect(status().isBadRequest());
         then(todoService).should(never()).findTodoById(any());
     }
 
@@ -147,7 +149,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos"))
+        mockMvc.perform(get("/api/v1/todos"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1));
         then(todoService).should().findAllTodos(TodoFilter.ALL, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
@@ -160,7 +162,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").param("status", "COMPLETED")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/todos").param("status", "COMPLETED")).andExpect(status().isOk());
         then(todoService).should().findAllTodos(TodoFilter.COMPLETED, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
     }
 
@@ -171,7 +173,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").param("status", "INCOMPLETE")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/todos").param("status", "INCOMPLETE")).andExpect(status().isOk());
         then(todoService).should().findAllTodos(TodoFilter.INCOMPLETE, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
     }
 
@@ -182,7 +184,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").param("status", "OVERDUE")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/todos").param("status", "OVERDUE")).andExpect(status().isOk());
         then(todoService).should().findAllTodos(TodoFilter.OVERDUE, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
     }
 
@@ -193,7 +195,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").param("status", "completed")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/todos").param("status", "completed")).andExpect(status().isOk());
         then(todoService).should().findAllTodos(TodoFilter.COMPLETED, TodoSortBy.CREATED_AT, Sort.Direction.ASC);
     }
 
@@ -204,7 +206,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").param("status", "bogus"))
+        mockMvc.perform(get("/api/v1/todos").param("status", "bogus"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[0]").value("status: invalid value 'bogus'"));
         then(todoService).should(never()).findAllTodos(any(), any(), any());
@@ -217,7 +219,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").param("sortBy", "TITLE").param("direction", "DESC")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/todos").param("sortBy", "TITLE").param("direction", "DESC")).andExpect(status().isOk());
         then(todoService).should().findAllTodos(TodoFilter.ALL, TodoSortBy.TITLE, Sort.Direction.DESC);
     }
 
@@ -228,7 +230,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(get("/todos").param("sortBy", "bogus")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/v1/todos").param("sortBy", "bogus")).andExpect(status().isBadRequest());
         then(todoService).should(never()).findAllTodos(any(), any(), any());
     }
 
@@ -244,7 +246,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(put("/todos/1")
+        mockMvc.perform(put("/api/v1/todos/1")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -260,10 +262,25 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(put("/todos/404")
+        mockMvc.perform(put("/api/v1/todos/404")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void givenConcurrentlyModifiedTodo_whenPutTodo_thenReturns409Test() throws Exception {
+        // given
+        final TodoUpdateRequest request = TodoUpdateRequest.builder().title("Buy oat milk").build();
+        given(todoService.updateTodo(eq(1L), any(TodoUpdateRequest.class)))
+                .willThrow(new ObjectOptimisticLockingFailureException(Todo.class, 1L));
+
+        // when
+        // then
+        mockMvc.perform(put("/api/v1/todos/1")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -273,7 +290,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(put("/todos/1")
+        mockMvc.perform(put("/api/v1/todos/1")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -287,7 +304,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(put("/todos/1")
+        mockMvc.perform(put("/api/v1/todos/1")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -301,7 +318,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(put("/todos/0")
+        mockMvc.perform(put("/api/v1/todos/0")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -316,7 +333,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(patch("/todos/1/complete"))
+        mockMvc.perform(patch("/api/v1/todos/1/complete"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.completed").value(true));
         then(todoService).should().markCompleted(1L);
@@ -329,7 +346,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(patch("/todos/404/complete")).andExpect(status().isNotFound());
+        mockMvc.perform(patch("/api/v1/todos/404/complete")).andExpect(status().isNotFound());
     }
 
     @Test
@@ -339,7 +356,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(patch("/todos/0/complete")).andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/v1/todos/0/complete")).andExpect(status().isBadRequest());
         then(todoService).should(never()).markCompleted(any());
     }
 
@@ -351,7 +368,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(patch("/todos/1/incomplete"))
+        mockMvc.perform(patch("/api/v1/todos/1/incomplete"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.completed").value(false));
         then(todoService).should().markIncomplete(1L);
@@ -364,7 +381,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(patch("/todos/404/incomplete")).andExpect(status().isNotFound());
+        mockMvc.perform(patch("/api/v1/todos/404/incomplete")).andExpect(status().isNotFound());
     }
 
     @Test
@@ -374,7 +391,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(patch("/todos/0/incomplete")).andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/v1/todos/0/incomplete")).andExpect(status().isBadRequest());
         then(todoService).should(never()).markIncomplete(any());
     }
 
@@ -385,7 +402,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(delete("/todos/1")).andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/v1/todos/1")).andExpect(status().isNoContent());
         then(todoService).should().deleteTodo(1L);
     }
 
@@ -396,7 +413,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(delete("/todos/404")).andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/v1/todos/404")).andExpect(status().isNotFound());
     }
 
     @Test
@@ -406,7 +423,7 @@ class TodoControllerTest {
 
         // when
         // then
-        mockMvc.perform(delete("/todos/0")).andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/v1/todos/0")).andExpect(status().isBadRequest());
         then(todoService).should(never()).deleteTodo(any());
     }
 }

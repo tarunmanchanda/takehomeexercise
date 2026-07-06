@@ -14,5 +14,6 @@ public record TodoResponse(
         @Schema(description = "Due date, may be null (ISO-8601)", example = "2026-07-10") LocalDate dueDate,
         @Schema(description = "Whether the task is completed", example = "false") boolean completed,
         @Schema(description = "When the Todo was created, immutable") Instant createdAt,
-        @Schema(description = "When the Todo was last changed; equals createdAt at creation") Instant updatedAt) {
+        @Schema(description = "When the Todo was last changed; equals createdAt at creation") Instant updatedAt,
+        @Schema(description = "Optimistic locking version, incremented on every update", example = "0") Long version) {
 }

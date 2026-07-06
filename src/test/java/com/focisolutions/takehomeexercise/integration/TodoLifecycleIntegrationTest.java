@@ -43,7 +43,7 @@ class TodoLifecycleIntegrationTest {
                 {"title":"Buy milk","description":"2 litres","dueDate":"2026-07-10"}""";
 
         // when: create
-        final MvcResult createResult = mockMvc.perform(authorized(post("/todos"))
+        final MvcResult createResult = mockMvc.perform(authorized(post("/api/v1/todos"))
                         .contentType("application/json")
                         .content(createBody))
                 .andExpect(status().isCreated())
